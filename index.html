@@ -701,9 +701,12 @@
         const apiUrl = url.includes('search') 
           ? `/api/search?${url.split('?')[1]}`
           : '/api/trending';
+        console.log('Fetching:', apiUrl);
         const response = await fetch(apiUrl);
-        if (!response.ok) throw new Error('API request failed');
-        return await response.json();
+        if (!response.ok) throw new Error('API request failed: ' + response.status);
+        const data = await response.json();
+        console.log('Got data:', data);
+        return data;
       } catch (error) {
         console.error('Fetch error:', error);
         resultsGrid.innerHTML = `
@@ -712,7 +715,7 @@
               <circle cx="12" cy="12" r="10"></circle>
               <path d="M12 8v4M12 16h.01"></path>
             </svg>
-            <p>Error fetching data. Please check if TMDB_API_KEY is set on server.</p>
+            <p>Error: ${error.message}</p>
           </div>
         `;
         return null;
