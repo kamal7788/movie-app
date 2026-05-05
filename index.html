@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StreamFlix - Movie & TV Streaming</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Source+Sans+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #0d0d0d;
+      --surface: #1a1a1a;
+      --surface-hover: #252525;
+      --primary: #e50914;
+      --primary-glow: #ff3344;
+      --secondary: #ffd700;
+      --text: #ffffff;
+      --text-muted: #a0a0a0;
+      --border: #333333;
+    }
+
+    body {
+      font-family: 'Source Sans Pro', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: linear-gradient(to bottom, rgba(13,13,13,0.98), rgba(13,13,13,0.9));
+      backdrop-filter: blur(10px);
+      padding: 1rem 0;
+    }
+
+    .header-content {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem;
+      color: var(--primary);
+      text-decoration: none;
+      letter-spacing: 2px;
+    }
+
+    .logo span {
+      color: var(--text);
+    }
+
+    .search-container {
+      flex: 1;
+      max-width: 600px;
+      position: relative;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 0.875rem 1.25rem;
+      padding-left: 3rem;
+      font-size: 1.1rem;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: 50px;
+      color: var(--text);
+      outline: none;
+      transition: all 0.3s ease;
+    }
+
+    .search-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 20px rgba(229, 9, 20, 0.3);
+    }
+
+    .search-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 1.1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .api-key-section {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .api-key-input {
+      padding: 0.5rem 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.875rem;
+      width: 180px;
+    }
+
+    .api-key-input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .btn {
+      padding: 0.5rem 1.25rem;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 0.875rem;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: var(--text);
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-glow);
+      transform: translateY(-2px);
+    }
+
+    .hero {
+      position: relative;
+      height: 60vh;
+      min-height: 400px;
+      display: flex;
+      align-items: flex-end;
+      overflow: hidden;
+    }
+
+    .hero-backdrop {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      mask-image: linear-gradient(to bottom, transparent 30%, var(--bg));
+      -webkit-mask-image: linear-gradient(to bottom, transparent 30%, var(--bg));
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      padding-bottom: 4rem;
+      width: 100%;
+    }
+
+    .hero-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(2.5rem, 8vw, 4.5rem);
+      letter-spacing: 3px;
+      margin-bottom: 0.5rem;
+      text-shadow: 0 4px 30px rgba(0,0,0,0.8);
+    }
+
+    .hero-meta {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      color: var(--text-muted);
+      font-size: 1.1rem;
+    }
+
+    .rating {
+      color: var(--secondary);
+      font-weight: 700;
+    }
+
+    .section {
+      padding: 3rem 0;
+    }
+
+    .section-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.75rem;
+      letter-spacing: 2px;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .section-title::before {
+      content: '';
+      width: 4px;
+      height: 1.5rem;
+      background: var(--primary);
+      border-radius: 2px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 1.5rem;
+    }
+
+    @media (min-width: 640px) {
+      .grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .grid {
+        grid-template-columns: repeat(5, 1fr);
+      }
+    }
+
+    .card {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--surface);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      aspect-ratio: 2/3;
+    }
+
+    .card:hover {
+      transform: scale(1.05) translateY(-8px);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5), 0 0 30px rgba(229, 9, 20, 0.2);
+    }
+
+    .card-poster {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.5s ease;
+    }
+
+    .card:hover .card-poster {
+      transform: scale(1.1);
+    }
+
+    .card-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 50%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .card:hover .card-overlay {
+      opacity: 1;
+    }
+
+    .card-badge {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      background: var(--secondary);
+      color: #000;
+      font-weight: 700;
+      font-size: 0.75rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      z-index: 2;
+    }
+
+    .card-type {
+      position: absolute;
+      top: 0.75rem;
+      left: 0.75rem;
+      background: rgba(0,0,0,0.8);
+      color: var(--text);
+      font-size: 0.7rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      z-index: 2;
+    }
+
+    .card-info {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 1rem;
+      transform: translateY(100%);
+      transition: transform 0.3s ease;
+    }
+
+    .card:hover .card-info {
+      transform: translateY(0);
+    }
+
+    .card-title {
+      font-weight: 600;
+      font-size: 0.95rem;
+      line-height: 1.3;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .card-year {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-top: 0.25rem;
+    }
+
+    .no-poster {
+      width: 100%;
+      height: 100%;
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 1rem;
+      color: var(--text-muted);
+    }
+
+    .no-poster svg {
+      width: 48px;
+      height: 48px;
+      opacity: 0.5;
+    }
+
+    .skeleton {
+      background: linear-gradient(90deg, var(--surface) 25%, var(--surface-hover) 50%, var(--surface) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(10px);
+    }
+
+    .modal-content {
+      position: relative;
+      background: var(--surface);
+      border-radius: 16px;
+      max-width: 900px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      animation: modalIn 0.3s ease;
+    }
+
+    @keyframes modalIn {
+      from {
+        opacity: 0;
+        transform: scale(0.95) translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      z-index: 10;
+      background: rgba(0,0,0,0.6);
+      border: none;
+      color: var(--text);
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+    }
+
+    .modal-close:hover {
+      background: var(--primary);
+    }
+
+    .modal-backdrop-img {
+      position: relative;
+      height: 400px;
+      background-size: cover;
+      background-position: center;
+    }
+
+    .modal-backdrop-img::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, transparent 50%, var(--surface));
+    }
+
+    .modal-body {
+      padding: 1.5rem 2rem 2rem;
+    }
+
+    .modal-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.5rem;
+      letter-spacing: 2px;
+      margin-bottom: 0.75rem;
+    }
+
+    .modal-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+    }
+
+    .modal-meta span {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .modal-genres {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .genre-tag {
+      background: var(--surface-hover);
+      padding: 0.375rem 0.875rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      color: var(--text);
+    }
+
+    .modal-overview {
+      color: var(--text-muted);
+      line-height: 1.7;
+      margin-bottom: 1.5rem;
+    }
+
+    .watch-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 1rem 2rem;
+      background: var(--primary);
+      color: var(--text);
+      font-size: 1.1rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.3s ease;
+    }
+
+    .watch-btn:hover {
+      background: var(--primary-glow);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(229, 9, 20, 0.4);
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading-container {
+      display: flex;
+      justify-content: center;
+      padding: 3rem;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--text-muted);
+    }
+
+    .empty-state svg {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+      border-top: 1px solid var(--border);
+      margin-top: 3rem;
+    }
+
+    @media (max-width: 768px) {
+      .header-content {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .api-key-section {
+        width: 100%;
+      }
+
+      .api-key-input {
+        flex: 1;
+      }
+
+      .hero {
+        height: 50vh;
+      }
+
+      .modal-backdrop-img {
+        height: 250px;
+      }
+
+      .modal-body {
+        padding: 1rem;
+      }
+
+      .modal-title {
+        font-size: 1.75rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <div class="header-content">
+        <a href="/" class="logo">STREAM<span>FLIX</span></a>
+        <div class="search-container">
+          <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.35-4.35"></path>
+          </svg>
+          <input type="text" class="search-input" id="searchInput" placeholder="Search movies, TV shows...">
+        </div>
+        <div class="api-key-section">
+          <input type="password" class="api-key-input" id="apiKeyInput" placeholder="TMDB API Key">
+          <button class="btn btn-primary" id="saveApiKey">Save</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="mainContent">
+    <section class="hero" id="heroSection">
+      <div class="hero-backdrop" id="heroBackdrop"></div>
+      <div class="container hero-content">
+        <h1 class="hero-title" id="heroTitle">TRENDING THIS WEEK</h1>
+        <div class="hero-meta" id="heroMeta"></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <h2 class="section-title" id="resultsTitle">Trending</h2>
+        <div class="grid" id="resultsGrid"></div>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal" id="detailModal">
+    <div class="modal-backdrop" id="modalBackdrop"></div>
+    <div class="modal-content">
+      <button class="modal-close" id="modalClose">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 6 6 18M6 6l12 12"></path>
+        </svg>
+      </button>
+      <div class="modal-backdrop-img" id="modalBackdropImg"></div>
+      <div class="modal-body">
+        <h2 class="modal-title" id="modalTitle"></h2>
+        <div class="modal-meta" id="modalMeta"></div>
+        <div class="modal-genres" id="modalGenres"></div>
+        <p class="modal-overview" id="modalOverview"></p>
+        <a href="#" class="watch-btn" id="watchBtn" target="_blank">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          WATCH NOW
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="container">
+      <p>StreamFlix &bull; Powered by TMDB & VidKing</p>
+    </div>
+  </footer>
+
+  <script>
+    const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
+    const TMDB_BACKDROP_BASE = 'https://image.tmdb.org/t/p/original';
+    const API_BASE = 'https://api.themoviedb.org/3';
+
+    let apiKey = localStorage.getItem('tmdb_api_key') || '';
+    let currentResults = [];
+    let debounceTimer = null;
+
+    const searchInput = document.getElementById('searchInput');
+    const apiKeyInput = document.getElementById('apiKeyInput');
+    const saveApiKeyBtn = document.getElementById('saveApiKey');
+    const resultsGrid = document.getElementById('resultsGrid');
+    const resultsTitle = document.getElementById('resultsTitle');
+    const heroSection = document.getElementById('heroSection');
+    const heroBackdrop = document.getElementById('heroBackdrop');
+    const heroTitle = document.getElementById('heroTitle');
+    const heroMeta = document.getElementById('heroMeta');
+    const detailModal = document.getElementById('detailModal');
+    const modalBackdrop = document.getElementById('modalBackdrop');
+    const modalClose = document.getElementById('modalClose');
+    const modalBackdropImg = document.getElementById('modalBackdropImg');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalMeta = document.getElementById('modalMeta');
+    const modalGenres = document.getElementById('modalGenres');
+    const modalOverview = document.getElementById('modalOverview');
+    const watchBtn = document.getElementById('watchBtn');
+
+    if (apiKey) {
+      apiKeyInput.value = apiKey;
+    }
+
+    saveApiKeyBtn.addEventListener('click', () => {
+      apiKey = apiKeyInput.value.trim();
+      if (apiKey) {
+        localStorage.setItem('tmdb_api_key', apiKey);
+        loadTrending();
+      }
+    });
+
+    searchInput.addEventListener('input', (e) => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        const query = e.target.value.trim();
+        if (query) {
+          searchMedia(query);
+        } else {
+          loadTrending();
+        }
+      }, 400);
+    });
+
+    modalBackdrop.addEventListener('click', closeModal);
+    modalClose.addEventListener('click', closeModal);
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && detailModal.classList.contains('active')) {
+        closeModal();
+      }
+    });
+
+    async function fetchTMDB(url) {
+      if (!apiKey) {
+        resultsGrid.innerHTML = `
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M12 8v4M12 16h.01"></path>
+            </svg>
+            <p>Please enter your TMDB API key to start searching</p>
+          </div>
+        `;
+        return null;
+      }
+
+      try {
+        const response = await fetch(`${url}${url.includes('?') ? '&' : '?'}api_key=${apiKey}`);
+        if (!response.ok) throw new Error('API request failed');
+        return await response.json();
+      } catch (error) {
+        console.error('Fetch error:', error);
+        resultsGrid.innerHTML = `
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M12 8v4M12 16h.01"></path>
+            </svg>
+            <p>Error fetching data. Check your API key and try again.</p>
+          </div>
+        `;
+        return null;
+      }
+    }
+
+    async function loadTrending() {
+      resultsTitle.textContent = 'Trending This Week';
+      heroSection.style.display = 'block';
+
+      const data = await fetchTMDB(`${API_BASE}/trending/all/week?language=en-US`);
+
+      if (data && data.results) {
+        currentResults = data.results.filter(r => r.media_type === 'movie' || r.media_type === 'tv');
+        displayResults(currentResults);
+
+        const featured = currentResults[0];
+        if (featured) {
+          heroBackdrop.style.backgroundImage = featured.backdrop_path
+            ? `url(${TMDB_BACKDROP_BASE}${featured.backdrop_path})`
+            : 'none';
+          heroTitle.textContent = featured.title || featured.name || 'Trending';
+
+          const year = (featured.release_date || featured.first_air_date || '').split('-')[0];
+          const rating = featured.vote_average?.toFixed(1);
+          heroMeta.innerHTML = `
+            <span>${featured.media_type === 'tv' ? 'TV Series' : 'Movie'}</span>
+            <span>${year || 'N/A'}</span>
+            <span class="rating">★ ${rating || 'N/A'}</span>
+          `;
+        }
+      }
+    }
+
+    async function searchMedia(query) {
+      resultsTitle.textContent = `Search Results for "${query}"`;
+      heroSection.style.display = 'none';
+
+      const data = await fetchTMDB(`${API_BASE}/search/multi?language=en-US&query=${encodeURIComponent(query)}`);
+
+      if (data && data.results) {
+        currentResults = data.results.filter(r =>
+          (r.media_type === 'movie' || r.media_type === 'tv') &&
+          r.poster_path
+        );
+        displayResults(currentResults);
+      }
+    }
+
+    function displayResults(results) {
+      if (!results.length) {
+        resultsGrid.innerHTML = `
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M12 8v4M12 16h.01"></path>
+            </svg>
+            <p>No results found</p>
+          </div>
+        `;
+        return;
+      }
+
+      resultsGrid.innerHTML = results.map(media => createCard(media)).join('');
+
+      resultsGrid.querySelectorAll('.card').forEach((card, index) => {
+        card.addEventListener('click', () => openDetail(currentResults[index]));
+      });
+    }
+
+    function createCard(media) {
+      const posterUrl = media.poster_path
+        ? `${TMDB_IMAGE_BASE}${media.poster_path}`
+        : null;
+      const title = media.title || media.name || 'Unknown';
+      const year = (media.release_date || media.first_air_date || '').split('-')[0];
+      const rating = media.vote_average?.toFixed(1);
+      const mediaType = media.media_type === 'tv' ? 'TV' : 'Movie';
+
+      return `
+        <div class="card">
+          ${posterUrl
+            ? `<img class="card-poster" src="${posterUrl}" alt="${title}" loading="lazy" onerror="this.parentElement.classList.add('no-poster'); this.parentElement.innerHTML='<div class=\\'no-poster\\'><svg viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'2\\'><rect x=\\'3\\' y=\\'3\\' width=\\'18\\' height=\\'18\\' rx=\\'2\\' ry=\\'2\\'></rect><circle cx=\\'8.5\\' cy=\\'8.5\\' r=\\'1.5\\'></circle><polyline points=\\'21 15 16 10 5 21\\'></polyline></svg><span>No Image</span></div>'">`
+            : `<div class="no-poster">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                  <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+                <span>No Image</span>
+              </div>`
+          }
+          <div class="card-overlay"></div>
+          <span class="card-badge">★ ${rating || 'N/A'}</span>
+          <span class="card-type">${mediaType}</span>
+          <div class="card-info">
+            <div class="card-title">${title}</div>
+            <div class="card-year">${year || 'N/A'}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function openDetail(media) {
+      const title = media.title || media.name || 'Unknown';
+      const year = (media.release_date || media.first_air_date || '').split('-')[0];
+      const rating = media.vote_average?.toFixed(1);
+      const mediaType = media.media_type === 'tv' ? 'TV Series' : 'Movie';
+
+      modalBackdropImg.style.backgroundImage = media.backdrop_path
+        ? `url(${TMDB_BACKDROP_BASE}${media.backdrop_path})`
+        : media.poster_path
+          ? `url(${TMDB_IMAGE_BASE}${media.poster_path})`
+          : 'none';
+
+      modalTitle.textContent = title;
+      modalMeta.innerHTML = `
+        <span>${mediaType}</span>
+        <span>${year || 'N/A'}</span>
+        <span class="rating">★ ${rating || 'N/A'}</span>
+      `;
+
+      modalGenres.innerHTML = '';
+
+      if (media.genre_ids?.length) {
+        const genreMap = {
+          28: 'Action', 12: 'Adventure', 16: 'Animation', 35: 'Comedy',
+          80: 'Crime', 99: 'Documentary', 18: 'Drama', 10751: 'Family',
+          14: 'Fantasy', 36: 'History', 27: 'Horror', 10402: 'Music',
+          9648: 'Mystery', 10749: 'Romance', 878: 'Sci-Fi', 10770: 'TV Movie',
+          53: 'Thriller', 10752: 'War', 37: 'Western'
+        };
+        modalGenres.innerHTML = media.genre_ids.slice(0, 4).map(id =>
+          `<span class="genre-tag">${genreMap[id] || 'Genre'}</span>`
+        ).join('');
+      }
+
+      modalOverview.textContent = media.overview || 'No description available.';
+
+      const vidkingUrl = `https://vidking.net/embed/${media.id}`;
+      watchBtn.href = vidkingUrl;
+
+      detailModal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+      detailModal.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    if (apiKey) {
+      loadTrending();
+    } else {
+      resultsGrid.innerHTML = `
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M12 8v4M12 16h.01"></path>
+          </svg>
+          <p>Enter your TMDB API key above to get started</p>
+        </div>
+      `;
+    }
+  </script>
+</body>
+</html>
