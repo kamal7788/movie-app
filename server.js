@@ -6,6 +6,9 @@ const PORT = process.env.PORT || 3000;
 const API_KEY = process.env.TMDB_API_KEY;
 const API_BASE = 'https://api.themoviedb.org/3';
 
+console.log('PORT:', PORT);
+console.log('API_KEY set:', !!API_KEY);
+
 const MIME_TYPES = {
   '.html': 'text/html',
   '.js': 'text/javascript',
@@ -20,6 +23,17 @@ const MIME_TYPES = {
 const server = http.createServer((req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+
+  if (req.url === '/api/health') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ 
+      status: 'ok',
+      apiKeySet: !!API_KEY,
+      apiKeyPrefix: API_KEY ? API_KEY.substring(0, 8) : null
+    }));
+    return;
+  }
+
   if (req.url === '/api/trending' || req.url.startsWith('/api/trending')) {
     if (!API_KEY) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
