@@ -214,12 +214,35 @@ function proxyEpornerRequest(apiUrl, res) {
     }
   };
   
+  // Follow redirects
   const request = https.get(apiUrl, options, (proxyRes) => {
+    // Handle redirect
+    if (proxyRes.statusCode === 301 || proxyRes.statusCode === 302) {
+      const redirectUrl = proxyRes.headers.location;
+      console.log('Redirect to:', redirectUrl);
+      https.get(redirectUrl, options, (redirectRes) => {
+        let data = '';
+        redirectRes.on('data', chunk => data += chunk);
+        redirectRes.on('end', () => {
+          console.log('Eporner response after redirect:', redirectRes.statusCode);
+          res.writeHead(redirectRes.statusCode, {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          });
+          res.end(data);
+        });
+      }).on('error', (err) => {
+        console.error('Redirect error:', err.message);
+        res.writeHead(502);
+        res.end(JSON.stringify({ error: 'Proxy error', details: err.message }));
+      });
+      return;
+    }
+    
     let data = '';
     proxyRes.on('data', chunk => data += chunk);
     proxyRes.on('end', () => {
       console.log('Eporner response status:', proxyRes.statusCode);
-      console.log('Eporner response:', data.substring(0, 500));
       res.writeHead(proxyRes.statusCode, {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*'
