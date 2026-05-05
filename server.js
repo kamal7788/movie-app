@@ -10,7 +10,7 @@ const API_BASE = 'https://api.themoviedb.org/3';
 
 const SUPER_SECRET_PASS = process.env.SUPER_SECRET_PASS || '';
 const SECRET_KEY = process.env.SECRET_KEY || '';
-const EPORNER_BASE = 'https://www.eporner.com/api/v2';
+const EPORNER_BASE = 'https://eporner.com/api/v2';
 
 console.log('PORT:', PORT);
 console.log('TMDB_API_KEY set:', !!API_KEY);
@@ -49,7 +49,8 @@ const server = http.createServer((req, res) => {
     res.end(JSON.stringify({
       envSUPER_SECRET_PASS: SUPER_SECRET_PASS ? 'SET' : 'NOT_SET',
       envSECRET_KEY: SECRET_KEY ? 'SET' : 'NOT_SET',
-      length: { super: SUPER_SECRET_PASS.length, secret: SECRET_KEY.length }
+      passwordLength: SUPER_SECRET_PASS.length,
+      first2Chars: SUPER_SECRET_PASS ? SUPER_SECRET_PASS.substring(0, 2) : ''
     }));
     return;
   }
@@ -92,7 +93,10 @@ const server = http.createServer((req, res) => {
     req.on('end', () => {
       const data = JSON.parse(Buffer.concat(body).toString());
       const password = data.password;
+      console.log('Login attempt, password length:', password ? password.length : 0);
+      console.log('Expected password length:', SUPER_SECRET_PASS.length);
       const isValid = password === SUPER_SECRET_PASS || (SECRET_KEY && password === SECRET_KEY);
+      console.log('isValid:', isValid);
       if (isValid) {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ authenticated: true }));
@@ -206,7 +210,7 @@ function proxyEpornerRequest(apiUrl, res) {
     headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       'Accept': 'application/json',
-      'Referer': 'https://www.eporner.com/'
+      'Referer': 'https://eporner.com/'
     }
   };
   
