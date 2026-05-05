@@ -24,7 +24,9 @@ const server = http.createServer((req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
 
-  if (req.url === '/api/health') {
+  console.log('Request:', req.method, req.url);
+
+  if (req.url === '/api/health' || req.url === '/health') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ 
       status: 'ok',
@@ -35,17 +37,20 @@ const server = http.createServer((req, res) => {
   }
 
   if (req.url === '/api/trending' || req.url.startsWith('/api/trending')) {
+    console.log('Handling trending request');
     if (!API_KEY) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'TMDB_API_KEY not configured' }));
       return;
     }
     const url = `${API_BASE}/trending/all/week?language=en-US&api_key=${API_KEY}`;
+    console.log('Fetching TMDB:', url.replace(API_KEY, 'HIDDEN'));
     proxyRequest(url, res);
     return;
   }
 
   if (req.url.startsWith('/api/search')) {
+    console.log('Handling search request');
     if (!API_KEY) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'TMDB_API_KEY not configured' }));
@@ -53,6 +58,7 @@ const server = http.createServer((req, res) => {
     }
     const query = req.url.split('?')[1];
     const url = `${API_BASE}/search/multi?language=en-US&${query}&api_key=${API_KEY}`;
+    console.log('Searching TMDB:', url.replace(API_KEY, 'HIDDEN'));
     proxyRequest(url, res);
     return;
   }
@@ -81,20 +87,35 @@ const server = http.createServer((req, res) => {
   });
 });
 
+const https = require('https');
+
 function proxyRequest(url, res) {
-  http.get(url, (proxyRes) => {
+  console.log('Proxying to:', url.replace(API_KEY, 'HIDDEN'));
+  
+  const request = https.get(url, (proxyRes) => {
     let data = '';
     proxyRes.on('data', chunk => data += chunk);
     proxyRes.on('end', () => {
+      console.log('TMDB response status:', proxyRes.statusCode);
       res.writeHead(proxyRes.statusCode, {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*'
       });
       res.end(data);
     });
-  }).on('error', () => {
-    res.writeHead(500);
-    res.end('Proxy Error');
+  });
+  
+  request.on('error', (err) => {
+    console.error('Proxy error:', err.message);
+    res.writeHead(502);
+    res.end(JSON.stringify({ error: 'Bad Gateway', details: err.message }));
+  });
+  
+  request.setTimeout(10000, () => {
+    console.error('Request timeout');
+    request.destroy();
+    res.writeHead(504);
+    res.end(JSON.stringify({ error: 'Timeout' }));
   });
 }
 
