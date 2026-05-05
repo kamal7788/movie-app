@@ -2,6 +2,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
+const url = require('url');
 
 const PORT = process.env.PORT || 3000;
 const API_KEY = process.env.TMDB_API_KEY;
@@ -9,14 +10,12 @@ const API_BASE = 'https://api.themoviedb.org/3';
 
 const SUPER_SECRET_PASS = process.env.SUPER_SECRET_PASS || '';
 const SECRET_KEY = process.env.SECRET_KEY || '';
-const ADULT_API_KEY = process.env.ADULT_API_KEY || '';
-const ADULT_API_BASE = 'https://api.adultdatalink.com';
+const EPORNER_BASE = 'https://www.eporner.com/api/v2';
 
 console.log('PORT:', PORT);
 console.log('TMDB_API_KEY set:', !!API_KEY);
 console.log('SUPER_SECRET_PASS set:', !!SUPER_SECRET_PASS);
 console.log('SECRET_KEY set:', !!SECRET_KEY);
-console.log('ADULT_API_KEY set:', !!ADULT_API_KEY);
 
 const MIME_TYPES = {
   '.html': 'text/html',
@@ -37,16 +36,11 @@ const server = http.createServer((req, res) => {
 
   if (req.url === '/api/health' || req.url === '/health') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ 
-      status: 'ok',
-      apiKeySet: !!API_KEY,
-      apiKeyPrefix: API_KEY ? API_KEY.substring(0, 8) : null
-    }));
+    res.end(JSON.stringify({ status: 'ok' }));
     return;
   }
 
   if (req.url === '/api/trending' || req.url.startsWith('/api/trending')) {
-    console.log('Handling trending request');
     if (!API_KEY) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'TMDB_API_KEY not configured' }));
@@ -59,16 +53,15 @@ const server = http.createServer((req, res) => {
   }
 
   if (req.url.startsWith('/api/search')) {
-    console.log('Handling search request');
     if (!API_KEY) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'TMDB_API_KEY not configured' }));
       return;
     }
     const query = req.url.split('?')[1];
-    const url = `${API_BASE}/search/multi?language=en-US&${query}&api_key=${API_KEY}`;
-    console.log('Searching TMDB:', url.replace(API_KEY, 'HIDDEN'));
-    proxyRequest(url, res);
+    const apiUrl = `${API_BASE}/search/multi?language=en-US&${query}&api_key=${API_KEY}`;
+    console.log('Searching TMDB:', apiUrl.replace(API_KEY, 'HIDDEN'));
+    proxyRequest(apiUrl, res);
     return;
   }
 
@@ -98,10 +91,12 @@ const server = http.createServer((req, res) => {
       res.end(JSON.stringify({ error: 'Unauthorized' }));
       return;
     }
-    const query = req.url.split('?')[1];
-    const url = `${ADULT_API_BASE}/search?${query}&api_key=${ADULT_API_KEY}`;
-    console.log('AdultDataLink search:', url.replace(ADULT_API_KEY, 'HIDDEN'));
-    proxyAdultRequest(url, res);
+    const query = new url.URL(req.url, 'http://localhost').searchParams.get('q') || 'all';
+    const page = new url.URL(req.url, 'http://localhost').searchParams.get('page') || 1;
+    const order = new url.URL(req.url, 'http://localhost').searchParams.get('order') || 'most-popular';
+    const epornerUrl = `${EPORNER_BASE}/video/search/?query=${encodeURIComponent(query)}&per_page=30&page=${page}&thumbsize=big&order=${order}&format=json`;
+    console.log('Eporner search:', epornerUrl);
+    proxyEpornerRequest(epornerUrl, res);
     return;
   }
 
@@ -113,10 +108,15 @@ const server = http.createServer((req, res) => {
       res.end(JSON.stringify({ error: 'Unauthorized' }));
       return;
     }
-    const query = req.url.split('?')[1];
-    const url = `${ADULT_API_BASE}/video?${query}&api_key=${ADULT_API_KEY}`;
-    console.log('AdultDataLink video:', url.replace(ADULT_API_KEY, 'HIDDEN'));
-    proxyAdultRequest(url, res);
+    const videoId = new url.URL(req.url, 'http://localhost').searchParams.get('id');
+    if (!videoId) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Video ID required' }));
+      return;
+    }
+    const epornerUrl = `${EPORNER_BASE}/video/id/?id=${videoId}&thumbsize=big&format=json`;
+    console.log('Eporner video:', epornerUrl);
+    proxyEpornerRequest(epornerUrl, res);
     return;
   }
 
@@ -144,10 +144,10 @@ const server = http.createServer((req, res) => {
   });
 });
 
-function proxyRequest(url, res) {
-  console.log('Proxying to:', url.replace(API_KEY, 'HIDDEN'));
+function proxyRequest(apiUrl, res) {
+  console.log('Proxying to:', apiUrl.replace(API_KEY, 'HIDDEN'));
   
-  const request = https.get(url, (proxyRes) => {
+  const request = https.get(apiUrl, (proxyRes) => {
     let data = '';
     proxyRes.on('data', chunk => data += chunk);
     proxyRes.on('end', () => {
@@ -174,32 +174,39 @@ function proxyRequest(url, res) {
   });
 }
 
-function proxyAdultRequest(url, res) {
-  console.log('Proxying to AdultDataLink:', url.replace(ADULT_API_KEY, 'HIDDEN'));
+function proxyEpornerRequest(apiUrl, res) {
+  console.log('Proxying to Eporner:', apiUrl);
   
-  const request = https.get(url, {
-    headers: { 'Authorization': `Bearer ${ADULT_API_KEY}` }
-  }, (proxyRes) => {
+  const request = https.get(apiUrl, (proxyRes) => {
     let data = '';
     proxyRes.on('data', chunk => data += chunk);
     proxyRes.on('end', () => {
-      console.log('AdultDataLink response status:', proxyRes.statusCode);
-      res.writeHead(proxyRes.statusCode, {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      });
-      res.end(data);
+      console.log('Eporner response status:', proxyRes.statusCode);
+      try {
+        const json = JSON.parse(data);
+        res.writeHead(proxyRes.statusCode, {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        });
+        res.end(JSON.stringify(json));
+      } catch (e) {
+        res.writeHead(200, {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        });
+        res.end(data);
+      }
     });
   });
   
   request.on('error', (err) => {
-    console.error('AdultDataLink proxy error:', err.message);
+    console.error('Eporner proxy error:', err.message);
     res.writeHead(502);
     res.end(JSON.stringify({ error: 'Bad Gateway', details: err.message }));
   });
   
   request.setTimeout(10000, () => {
-    console.error('AdultDataLink request timeout');
+    console.error('Eporner request timeout');
     request.destroy();
     res.writeHead(504);
     res.end(JSON.stringify({ error: 'Timeout' }));

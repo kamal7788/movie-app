@@ -1000,7 +1000,7 @@
         });
         if (!response.ok) throw new Error('Search failed: ' + response.status);
         const data = await response.json();
-        adultSearchResults = data.results || [];
+        adultSearchResults = data.videos || [];
         displayAdultResults(adultSearchResults);
       } catch (err) {
         console.error('Adult search error:', err);
@@ -1020,31 +1020,49 @@
     }
 
     function createAdultCard(video) {
-      const title = video.title || video.name || 'Untitled';
-      const image = video.thumbnail || video.poster || '';
-      const rating = video.rating || video.views || '';
+      const title = video.title || 'Untitled';
+      const thumbs = video.thumbs || [];
+      const image = thumbs.length > 0 ? thumbs[thumbs.length - 1].src : '';
+      const duration = video.duration ? formatDuration(video.duration) : '';
+      const rating = video.rating ? video.rating.toFixed(1) + '%' : '';
 
       return `
         <div class="card adult-card">
           ${image ? `<img class="card-poster" src="${image}" alt="${title}" loading="lazy">` : '<div class="no-poster"><span>No Image</span></div>'}
           <div class="card-overlay"></div>
-          <span class="card-badge">★ ${rating}</span>
+          ${rating ? `<span class="card-badge">★ ${rating}</span>` : ''}
           <div class="card-info">
             <div class="card-title">${title}</div>
+            ${duration ? `<div class="card-year">${duration}</div>` : ''}
           </div>
         </div>
       `;
     }
 
+    function formatDuration(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+    }
+
     function playAdultVideo(video) {
-      const embedUrl = video.embed_url || video.url || '';
-      if (embedUrl) {
-        adultVideoPlayer.src = embedUrl;
-        adultTitle.textContent = video.title || video.name || '';
-        adultMeta.innerHTML = `<span>${video.duration || ''}</span><span>${video.views || ''} views</span>`;
-        adultOverview.textContent = video.description || '';
+      const title = video.title || '';
+      const duration = video.duration ? formatDuration(video.duration) : '';
+      const views = video.views || '';
+      const viewsStr = views ? `${Number(views).toLocaleString()} views` : '';
+      
+      adultTitle.textContent = title;
+      adultMeta.innerHTML = `
+        <span>${duration}</span>
+        <span>${viewsStr}</span>
+      `;
+      
+      if (video.embed) {
+        adultVideoPlayer.src = video.embed;
         adultModal.classList.add('active');
         document.body.style.overflow = 'hidden';
+      } else {
+        adultMeta.innerHTML += '<p style="margin-top:1rem;">No embed available</p>';
       }
     }
 
