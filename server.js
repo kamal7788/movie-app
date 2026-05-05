@@ -36,7 +36,21 @@ const server = http.createServer((req, res) => {
 
   if (req.url === '/api/health' || req.url === '/health') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ status: 'ok' }));
+    res.end(JSON.stringify({ 
+      status: 'ok',
+      superSecretSet: !!SUPER_SECRET_PASS,
+      secretKeySet: !!SECRET_KEY
+    }));
+    return;
+  }
+
+  if (req.url === '/api/admin/auth-test') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      envSUPER_SECRET_PASS: SUPER_SECRET_PASS ? 'SET' : 'NOT_SET',
+      envSECRET_KEY: SECRET_KEY ? 'SET' : 'NOT_SET',
+      length: { super: SUPER_SECRET_PASS.length, secret: SECRET_KEY.length }
+    }));
     return;
   }
 

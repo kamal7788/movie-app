@@ -681,8 +681,13 @@
   </div>
 
   <div class="modal" id="loginModal">
-    <div class="modal-backdrop" id="loginBackdrop"></div>
+    <div class="modal-backdrop" id="loginBackdrop" style="position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:999;"></div>
     <div class="modal-content login-content">
+      <button class="modal-close" id="loginClose" style="position:absolute;top:1rem;right:1rem;z-index:1001;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 6 6 18M6 6l12 12"></path>
+        </svg>
+      </button>
       <h2 class="modal-title">Super Secret</h2>
       <p style="color: var(--text-muted); margin-bottom: 1rem;">Enter password to access adult content</p>
       <input type="password" class="search-input" id="secretPassword" placeholder="Password" style="margin-bottom: 1rem;">
@@ -739,9 +744,9 @@
     const modalOverview = document.getElementById('modalOverview');
 
     const loginModal = document.getElementById('loginModal');
-    const loginBackdrop = document.getElementById('loginBackdrop');
     const secretPassword = document.getElementById('secretPassword');
     const loginBtn = document.getElementById('loginBtn');
+    const loginClose = document.getElementById('loginClose');
     const loginError = document.getElementById('loginError');
     const superSecretLink = document.getElementById('superSecretLink');
     const adultModal = document.getElementById('adultModal');
@@ -755,15 +760,24 @@
     let isAuthenticated = false;
     let superSecretToken = '';
     let adultSearchResults = [];
+    let inAdultMode = false;
 
     searchInput.addEventListener('input', (e) => {
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
         const query = e.target.value.trim();
         if (query) {
-          searchMedia(query);
+          if (inAdultMode) {
+            searchAdultContent(query);
+          } else {
+            searchMedia(query);
+          }
         } else {
-          loadTrending();
+          if (inAdultMode) {
+            searchAdultContent('all');
+          } else {
+            loadStreaming();
+          }
         }
       }, 400);
     });
@@ -803,7 +817,7 @@
       }
     }
 
-    async function loadTrending() {
+    async function loadStreaming() {
       resultsTitle.textContent = 'Trending This Week';
       heroSection.style.display = 'block';
 
@@ -946,7 +960,7 @@
       document.getElementById('videoPlayer').src = '';
     }
 
-    loadTrending();
+    loadStreaming();
 
     superSecretLink.addEventListener('click', (e) => {
       e.preventDefault();
@@ -960,6 +974,7 @@
     });
 
     loginBackdrop.addEventListener('click', () => loginModal.classList.remove('active'));
+    loginClose.addEventListener('click', () => loginModal.classList.remove('active'));
     loginBtn.addEventListener('click', authenticate);
 
     async function authenticate() {
@@ -987,9 +1002,11 @@
     }
 
     async function showAdultSection() {
+      inAdultMode = true;
       resultsTitle.textContent = 'Adult Section';
       heroSection.style.display = 'none';
-      const query = searchInput.value.trim() || '热门';
+      searchInput.placeholder = 'Search adult videos...';
+      const query = searchInput.value.trim() || 'all';
       await searchAdultContent(query);
     }
 
