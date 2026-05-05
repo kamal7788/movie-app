@@ -792,7 +792,8 @@
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
         const query = e.target.value.trim();
-        if (inAdultMode) {
+        if (query) {
+          if (inAdultMode) {
             searchAdultContent(query);
           } else {
             searchMedia(query);
@@ -809,6 +810,11 @@
 
     modalBackdrop.addEventListener('click', closeModal);
     modalClose.addEventListener('click', closeModal);
+
+    function hideAdultToolbar() {
+      adultToolbar.style.display = 'none';
+    }
+    hideAdultToolbar();
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && detailModal.classList.contains('active')) {
