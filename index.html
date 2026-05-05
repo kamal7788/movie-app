@@ -1019,9 +1019,16 @@
         const response = await fetch(`/api/adult/search?q=${encodeURIComponent(query)}`, {
           headers: { 'Authorization': superSecretToken }
         });
+        console.log('Adult search response status:', response.status);
         if (!response.ok) throw new Error('Search failed: ' + response.status);
         const data = await response.json();
+        console.log('Adult search data keys:', Object.keys(data));
+        console.log('Adult search data:', JSON.stringify(data).substring(0, 500));
         adultSearchResults = data.videos || [];
+        if (adultSearchResults.length === 0 && data.movies) {
+          adultSearchResults = data.movies;
+        }
+        console.log('Adult results count:', adultSearchResults.length);
         displayAdultResults(adultSearchResults);
       } catch (err) {
         console.error('Adult search error:', err);
