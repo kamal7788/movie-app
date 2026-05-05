@@ -419,6 +419,22 @@
       background: var(--primary);
     }
 
+    .modal-player-container {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16/9;
+      background: #000;
+    }
+
+    .modal-player-container iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
     .modal-backdrop-img {
       position: relative;
       height: 400px;
@@ -619,18 +635,14 @@
           <path d="M18 6 6 18M6 6l12 12"></path>
         </svg>
       </button>
-      <div class="modal-backdrop-img" id="modalBackdropImg"></div>
+      <div class="modal-player-container" id="playerContainer">
+        <iframe id="videoPlayer" src="" allowfullscreen></iframe>
+      </div>
       <div class="modal-body">
         <h2 class="modal-title" id="modalTitle"></h2>
         <div class="modal-meta" id="modalMeta"></div>
         <div class="modal-genres" id="modalGenres"></div>
         <p class="modal-overview" id="modalOverview"></p>
-        <a href="#" class="watch-btn" id="watchBtn" target="_blank">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-            <polygon points="5 3 19 12 5 21 5 3"></polygon>
-          </svg>
-          WATCH NOW
-        </a>
       </div>
     </div>
   </div>
@@ -658,12 +670,10 @@
     const detailModal = document.getElementById('detailModal');
     const modalBackdrop = document.getElementById('modalBackdrop');
     const modalClose = document.getElementById('modalClose');
-    const modalBackdropImg = document.getElementById('modalBackdropImg');
     const modalTitle = document.getElementById('modalTitle');
     const modalMeta = document.getElementById('modalMeta');
     const modalGenres = document.getElementById('modalGenres');
     const modalOverview = document.getElementById('modalOverview');
-    const watchBtn = document.getElementById('watchBtn');
 
     searchInput.addEventListener('input', (e) => {
       clearTimeout(debounceTimer);
@@ -812,11 +822,11 @@
       const rating = media.vote_average?.toFixed(1);
       const mediaType = media.media_type === 'tv' ? 'TV Series' : 'Movie';
 
-      modalBackdropImg.style.backgroundImage = media.backdrop_path
-        ? `url(${TMDB_BACKDROP_BASE}${media.backdrop_path})`
-        : media.poster_path
-          ? `url(${TMDB_IMAGE_BASE}${media.poster_path})`
-          : 'none';
+      const vidkingUrl = media.media_type === 'tv'
+        ? `https://www.vidking.net/embed/tv/${media.id}/1/1`
+        : `https://www.vidking.net/embed/movie/${media.id}`;
+
+      document.getElementById('videoPlayer').src = vidkingUrl;
 
       modalTitle.textContent = title;
       modalMeta.innerHTML = `
@@ -842,12 +852,6 @@
 
       modalOverview.textContent = media.overview || 'No description available.';
 
-      const vidkingUrl = media.media_type === 'tv'
-        ? `https://www.vidking.net/embed/tv/${media.id}/1/1`
-        : `https://www.vidking.net/embed/movie/${media.id}`;
-      watchBtn.href = vidkingUrl;
-      watchBtn.target = '_blank';
-
       detailModal.classList.add('active');
       document.body.style.overflow = 'hidden';
     }
@@ -855,6 +859,7 @@
     function closeModal() {
       detailModal.classList.remove('active');
       document.body.style.overflow = '';
+      document.getElementById('videoPlayer').src = '';
     }
 
     loadTrending();

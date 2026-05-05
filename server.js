@@ -18,6 +18,8 @@ const MIME_TYPES = {
 };
 
 const server = http.createServer((req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
   if (req.url === '/api/trending' || req.url.startsWith('/api/trending')) {
     if (!API_KEY) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
