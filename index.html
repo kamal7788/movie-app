@@ -659,6 +659,20 @@
     <section class="section">
       <div class="container">
         <h2 class="section-title" id="resultsTitle">Trending</h2>
+        <div class="adult-toolbar" id="adultToolbar" style="display:none; margin-bottom: 1rem; gap: 1rem; display: flex; flex-wrap: wrap; align-items: center;">
+          <select id="sortSelect" style="padding: 0.5rem; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 8px;">
+            <option value="most-popular">Most Popular</option>
+            <option value="latest">Latest</option>
+            <option value="longest">Longest</option>
+            <option value="shortest">Shortest</option>
+            <option value="top-rated">Top Rated</option>
+            <option value="top-weekly">Top Weekly</option>
+            <option value="top-monthly">Top Monthly</option>
+          </select>
+          <button id="prevPage" style="padding: 0.5rem 1rem; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 8px;">Prev</button>
+          <span id="pageInfo" style="color: var(--text-muted);">Page 1</span>
+          <button id="nextPage" style="padding: 0.5rem 1rem; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 8px;">Next</button>
+        </div>
         <div class="grid" id="resultsGrid"></div>
       </div>
     </section>
@@ -753,6 +767,11 @@
     const loginClose = document.getElementById('loginClose');
     const loginError = document.getElementById('loginError');
     const superSecretLink = document.getElementById('superSecretLink');
+    const adultToolbar = document.getElementById('adultToolbar');
+    const sortSelect = document.getElementById('sortSelect');
+    const prevPage = document.getElementById('prevPage');
+    const nextPage = document.getElementById('nextPage');
+    const pageInfo = document.getElementById('pageInfo');
     const adultModal = document.getElementById('adultModal');
     const adultBackdrop = document.getElementById('adultBackdrop');
     const adultClose = document.getElementById('adultClose');
@@ -765,13 +784,15 @@
     let superSecretToken = '';
     let adultSearchResults = [];
     let inAdultMode = false;
+    let adultPage = 1;
+    let adultOrder = 'most-popular';
+    let totalPages = 1;
 
     searchInput.addEventListener('input', (e) => {
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
         const query = e.target.value.trim();
-        if (query) {
-          if (inAdultMode) {
+        if (inAdultMode) {
             searchAdultContent(query);
           } else {
             searchMedia(query);
@@ -1007,29 +1028,55 @@
 
     async function showAdultSection() {
       inAdultMode = true;
+      adultPage = 1;
       resultsTitle.textContent = 'Adult Section';
       heroSection.style.display = 'none';
+      adultToolbar.style.display = 'flex';
       searchInput.placeholder = 'Search adult videos...';
       const query = searchInput.value.trim() || 'all';
       await searchAdultContent(query);
     }
 
+    sortSelect.addEventListener('change', async () => {
+      adultOrder = sortSelect.value;
+      adultPage = 1;
+      const query = searchInput.value.trim() || 'all';
+      await searchAdultContent(query);
+    });
+
+    nextPage.addEventListener('click', async () => {
+      if (adultPage < totalPages) {
+        adultPage++;
+        const query = searchInput.value.trim() || 'all';
+        await searchAdultContent(query);
+      }
+    });
+
+    prevPage.addEventListener('click', async () => {
+      if (adultPage > 1) {
+        adultPage--;
+        const query = searchInput.value.trim() || 'all';
+        await searchAdultContent(query);
+      }
+    });
+
     async function searchAdultContent(query) {
       try {
-        const response = await fetch(`/api/adult/search?q=${encodeURIComponent(query)}`, {
+        const response = await fetch(`/api/adult/search?q=${encodeURIComponent(query)}&page=${adultPage}&order=${adultOrder}`, {
           headers: { 'Authorization': superSecretToken }
         });
         console.log('Adult search response status:', response.status);
         if (!response.ok) throw new Error('Search failed: ' + response.status);
         const data = await response.json();
         console.log('Adult search data keys:', Object.keys(data));
-        console.log('Adult search data:', JSON.stringify(data).substring(0, 500));
         adultSearchResults = data.videos || [];
         if (adultSearchResults.length === 0 && data.movies) {
           adultSearchResults = data.movies;
         }
-        console.log('Adult results count:', adultSearchResults.length);
+        totalPages = data.total_pages || 1;
+        console.log('Adult results count:', adultSearchResults.length, 'total pages:', totalPages);
         displayAdultResults(adultSearchResults);
+        pageInfo.textContent = `Page ${adultPage} of ${totalPages}`;
       } catch (err) {
         console.error('Adult search error:', err);
         resultsGrid.innerHTML = `<div class="empty-state"><p>Error: ${err.message}</p></div>`;
