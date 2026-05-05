@@ -40,6 +40,13 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  if (req.url === '/api/debug') {
+    const epornerUrl = `${EPORNER_BASE}/video/search/?query=teen&per_page=5&thumbsize=big&order=most-popular&format=json`;
+    console.log('Debug - Testing Eporner API');
+    proxyEpornerRequest(epornerUrl, res);
+    return;
+  }
+
   if (req.url === '/api/trending' || req.url.startsWith('/api/trending')) {
     if (!API_KEY) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
@@ -91,11 +98,13 @@ const server = http.createServer((req, res) => {
       res.end(JSON.stringify({ error: 'Unauthorized' }));
       return;
     }
-    const query = new url.URL(req.url, 'http://localhost').searchParams.get('q') || 'all';
-    const page = new url.URL(req.url, 'http://localhost').searchParams.get('page') || 1;
-    const order = new url.URL(req.url, 'http://localhost').searchParams.get('order') || 'most-popular';
+    const urlObj = new url.URL(req.url, 'http://localhost');
+    const query = urlObj.searchParams.get('q') || 'all';
+    const page = urlObj.searchParams.get('page') || '1';
+    const order = urlObj.searchParams.get('order') || 'most-popular';
+    console.log('Searching Eporner - query:', query, 'page:', page, 'order:', order);
     const epornerUrl = `${EPORNER_BASE}/video/search/?query=${encodeURIComponent(query)}&per_page=30&page=${page}&thumbsize=big&order=${order}&format=json`;
-    console.log('Eporner search:', epornerUrl);
+    console.log('Eporner URL:', epornerUrl);
     proxyEpornerRequest(epornerUrl, res);
     return;
   }
@@ -108,14 +117,16 @@ const server = http.createServer((req, res) => {
       res.end(JSON.stringify({ error: 'Unauthorized' }));
       return;
     }
-    const videoId = new url.URL(req.url, 'http://localhost').searchParams.get('id');
+    const urlObj = new url.URL(req.url, 'http://localhost');
+    const videoId = urlObj.searchParams.get('id');
     if (!videoId) {
       res.writeHead(400, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Video ID required' }));
       return;
     }
+    console.log('Getting Eporner video - id:', videoId);
     const epornerUrl = `${EPORNER_BASE}/video/id/?id=${videoId}&thumbsize=big&format=json`;
-    console.log('Eporner video:', epornerUrl);
+    console.log('Eporner URL:', epornerUrl);
     proxyEpornerRequest(epornerUrl, res);
     return;
   }
@@ -177,25 +188,25 @@ function proxyRequest(apiUrl, res) {
 function proxyEpornerRequest(apiUrl, res) {
   console.log('Proxying to Eporner:', apiUrl);
   
-  const request = https.get(apiUrl, (proxyRes) => {
+  const options = {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Accept': 'application/json',
+      'Referer': 'https://www.eporner.com/'
+    }
+  };
+  
+  const request = https.get(apiUrl, options, (proxyRes) => {
     let data = '';
     proxyRes.on('data', chunk => data += chunk);
     proxyRes.on('end', () => {
       console.log('Eporner response status:', proxyRes.statusCode);
-      try {
-        const json = JSON.parse(data);
-        res.writeHead(proxyRes.statusCode, {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
-        });
-        res.end(JSON.stringify(json));
-      } catch (e) {
-        res.writeHead(200, {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
-        });
-        res.end(data);
-      }
+      console.log('Eporner response:', data.substring(0, 500));
+      res.writeHead(proxyRes.statusCode, {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      });
+      res.end(data);
     });
   });
   
