@@ -586,7 +586,7 @@
           </svg>
           <input type="text" class="search-input" id="searchInput" placeholder="Search movies, TV shows...">
         </div>
-        <div class="api-key-section">
+        <div class="api-key-section" style="display: none;">
           <input type="password" class="api-key-input" id="apiKeyInput" placeholder="TMDB API Key">
           <button class="btn btn-primary" id="saveApiKey">Save</button>
         </div>
@@ -644,15 +644,11 @@
   <script>
     const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
     const TMDB_BACKDROP_BASE = 'https://image.tmdb.org/t/p/original';
-    const API_BASE = 'https://api.themoviedb.org/3';
 
-    let apiKey = localStorage.getItem('tmdb_api_key') || '';
     let currentResults = [];
     let debounceTimer = null;
 
     const searchInput = document.getElementById('searchInput');
-    const apiKeyInput = document.getElementById('apiKeyInput');
-    const saveApiKeyBtn = document.getElementById('saveApiKey');
     const resultsGrid = document.getElementById('resultsGrid');
     const resultsTitle = document.getElementById('resultsTitle');
     const heroSection = document.getElementById('heroSection');
@@ -668,18 +664,6 @@
     const modalGenres = document.getElementById('modalGenres');
     const modalOverview = document.getElementById('modalOverview');
     const watchBtn = document.getElementById('watchBtn');
-
-    if (apiKey) {
-      apiKeyInput.value = apiKey;
-    }
-
-    saveApiKeyBtn.addEventListener('click', () => {
-      apiKey = apiKeyInput.value.trim();
-      if (apiKey) {
-        localStorage.setItem('tmdb_api_key', apiKey);
-        loadTrending();
-      }
-    });
 
     searchInput.addEventListener('input', (e) => {
       clearTimeout(debounceTimer);
@@ -703,21 +687,11 @@
     });
 
     async function fetchTMDB(url) {
-      if (!apiKey) {
-        resultsGrid.innerHTML = `
-          <div class="empty-state">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"></circle>
-              <path d="M12 8v4M12 16h.01"></path>
-            </svg>
-            <p>Please enter your TMDB API key to start searching</p>
-          </div>
-        `;
-        return null;
-      }
-
       try {
-        const response = await fetch(`${url}${url.includes('?') ? '&' : '?'}api_key=${apiKey}`);
+        const apiUrl = url.includes('search') 
+          ? `/api/search?${url.split('?')[1]}`
+          : '/api/trending';
+        const response = await fetch(apiUrl);
         if (!response.ok) throw new Error('API request failed');
         return await response.json();
       } catch (error) {
@@ -728,7 +702,7 @@
               <circle cx="12" cy="12" r="10"></circle>
               <path d="M12 8v4M12 16h.01"></path>
             </svg>
-            <p>Error fetching data. Check your API key and try again.</p>
+            <p>Error fetching data. Please check if TMDB_API_KEY is set on server.</p>
           </div>
         `;
         return null;
@@ -739,7 +713,7 @@
       resultsTitle.textContent = 'Trending This Week';
       heroSection.style.display = 'block';
 
-      const data = await fetchTMDB(`${API_BASE}/trending/all/week?language=en-US`);
+      const data = await fetchTMDB('/trending/all/week?language=en-US');
 
       if (data && data.results) {
         currentResults = data.results.filter(r => r.media_type === 'movie' || r.media_type === 'tv');
@@ -767,7 +741,7 @@
       resultsTitle.textContent = `Search Results for "${query}"`;
       heroSection.style.display = 'none';
 
-      const data = await fetchTMDB(`${API_BASE}/search/multi?language=en-US&query=${encodeURIComponent(query)}`);
+      const data = await fetchTMDB(`/search/multi?language=en-US&query=${encodeURIComponent(query)}`);
 
       if (data && data.results) {
         currentResults = data.results.filter(r =>
@@ -883,18 +857,7 @@
       document.body.style.overflow = '';
     }
 
-    if (apiKey) {
-      loadTrending();
-    } else {
-      resultsGrid.innerHTML = `
-        <div class="empty-state">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"></circle>
-            <path d="M12 8v4M12 16h.01"></path>
-          </svg>
-          <p>Enter your TMDB API key above to get started</p>
-        </div>
-      `;
+    loadTrending();
     }
   </script>
 </body>
