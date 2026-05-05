@@ -214,55 +214,40 @@ function proxyEpornerRequest(apiUrl, res) {
     }
   };
   
-  // Follow redirects
-  const request = https.get(apiUrl, options, (proxyRes) => {
-    // Handle redirect
-    if (proxyRes.statusCode === 301 || proxyRes.statusCode === 302) {
-      const redirectUrl = proxyRes.headers.location;
-      console.log('Redirect to:', redirectUrl);
-      https.get(redirectUrl, options, (redirectRes) => {
-        let data = '';
-        redirectRes.on('data', chunk => data += chunk);
-        redirectRes.on('end', () => {
-          console.log('Eporner response after redirect:', redirectRes.statusCode);
-          res.writeHead(redirectRes.statusCode, {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*'
-          });
-          res.end(data);
-        });
-      }).on('error', (err) => {
-        console.error('Redirect error:', err.message);
-        res.writeHead(502);
-        res.end(JSON.stringify({ error: 'Proxy error', details: err.message }));
-      });
-      return;
-    }
+  const doRequest = (finalUrl) => {
+    console.log('Making request to:', finalUrl);
     
-    let data = '';
-    proxyRes.on('data', chunk => data += chunk);
-    proxyRes.on('end', () => {
-      console.log('Eporner response status:', proxyRes.statusCode);
-      res.writeHead(proxyRes.statusCode, {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
+    https.get(finalUrl, options, (proxyRes) => {
+      console.log('Response status:', proxyRes.statusCode);
+      console.log('Response headers:', JSON.stringify(proxyRes.headers));
+      
+      if (proxyRes.statusCode === 301 || proxyRes.statusCode === 302) {
+        const redirectUrl = proxyRes.headers.location;
+        console.log('Got redirect to:', redirectUrl);
+        if (redirectUrl) {
+          doRequest(redirectUrl.startsWith('http') ? redirectUrl : 'https://eporner.com' + redirectUrl);
+          return;
+        }
+      }
+      
+      let data = '';
+      proxyRes.on('data', chunk => data += chunk);
+      proxyRes.on('end', () => {
+        console.log('Final response length:', data.length);
+        res.writeHead(proxyRes.statusCode, {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        });
+        res.end(data);
       });
-      res.end(data);
+    }).on('error', (err) => {
+      console.error('Request error:', err.message);
+      res.writeHead(502);
+      res.end(JSON.stringify({ error: 'Proxy error', details: err.message }));
     });
-  });
+  };
   
-  request.on('error', (err) => {
-    console.error('Eporner proxy error:', err.message);
-    res.writeHead(502);
-    res.end(JSON.stringify({ error: 'Bad Gateway', details: err.message }));
-  });
-  
-  request.setTimeout(10000, () => {
-    console.error('Eporner request timeout');
-    request.destroy();
-    res.writeHead(504);
-    res.end(JSON.stringify({ error: 'Timeout' }));
-  });
+  doRequest(apiUrl);
 }
 
 server.listen(PORT, () => {
