@@ -567,6 +567,42 @@
       .api-key-section {
         width: 100%;
       }
+    }
+
+    .super-secret-link {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.875rem;
+      padding: 0.5rem 1rem;
+      transition: color 0.3s;
+    }
+
+    .super-secret-link:hover {
+      color: var(--primary);
+    }
+
+    .login-content {
+      padding: 2rem;
+      text-align: center;
+    }
+
+    #secretPassword {
+      width: 100%;
+      text-align: center;
+    }
+
+    .adult-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+    }
+
+    .adult-section {
+      padding: 2rem 0;
+    }
+      color: var(--primary);
+    }
 
       .api-key-input {
         flex: 1;
@@ -594,7 +630,7 @@
   <header>
     <div class="container">
       <div class="header-content">
-        <a href="/" class="logo">STREAM<span>FLIX</span></a>
+        <a href="#" class="logo">STREAM<span>FLIX</span></a>
         <div class="search-container">
           <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="11" cy="11" r="8"></circle>
@@ -602,10 +638,7 @@
           </svg>
           <input type="text" class="search-input" id="searchInput" placeholder="Search movies, TV shows...">
         </div>
-        <div class="api-key-section" style="display: none;">
-          <input type="password" class="api-key-input" id="apiKeyInput" placeholder="TMDB API Key">
-          <button class="btn btn-primary" id="saveApiKey">Save</button>
-        </div>
+        <a href="#" class="super-secret-link" id="superSecretLink">Super Secret</a>
       </div>
     </div>
   </header>
@@ -647,6 +680,36 @@
     </div>
   </div>
 
+  <div class="modal" id="loginModal">
+    <div class="modal-backdrop" id="loginBackdrop"></div>
+    <div class="modal-content login-content">
+      <h2 class="modal-title">Super Secret</h2>
+      <p style="color: var(--text-muted); margin-bottom: 1rem;">Enter password to access adult content</p>
+      <input type="password" class="search-input" id="secretPassword" placeholder="Password" style="margin-bottom: 1rem;">
+      <button class="btn btn-primary" id="loginBtn" style="width: 100%;">Access</button>
+      <p id="loginError" style="color: var(--primary); margin-top: 1rem; display: none;"></p>
+    </div>
+  </div>
+
+  <div class="modal" id="adultModal">
+    <div class="modal-backdrop" id="adultBackdrop"></div>
+    <div class="modal-content">
+      <button class="modal-close" id="adultClose">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 6 6 18M6 6l12 12"></path>
+        </svg>
+      </button>
+      <div class="modal-player-container">
+        <iframe id="adultVideoPlayer" src="" allowfullscreen></iframe>
+      </div>
+      <div class="modal-body">
+        <h2 class="modal-title" id="adultTitle"></h2>
+        <div class="modal-meta" id="adultMeta"></div>
+        <p class="modal-overview" id="adultOverview"></p>
+      </div>
+    </div>
+  </div>
+
   <footer>
     <div class="container">
       <p>StreamFlix</p>
@@ -674,6 +737,24 @@
     const modalMeta = document.getElementById('modalMeta');
     const modalGenres = document.getElementById('modalGenres');
     const modalOverview = document.getElementById('modalOverview');
+
+    const loginModal = document.getElementById('loginModal');
+    const loginBackdrop = document.getElementById('loginBackdrop');
+    const secretPassword = document.getElementById('secretPassword');
+    const loginBtn = document.getElementById('loginBtn');
+    const loginError = document.getElementById('loginError');
+    const superSecretLink = document.getElementById('superSecretLink');
+    const adultModal = document.getElementById('adultModal');
+    const adultBackdrop = document.getElementById('adultBackdrop');
+    const adultClose = document.getElementById('adultClose');
+    const adultVideoPlayer = document.getElementById('adultVideoPlayer');
+    const adultTitle = document.getElementById('adultTitle');
+    const adultMeta = document.getElementById('adultMeta');
+    const adultOverview = document.getElementById('adultOverview');
+
+    let isAuthenticated = false;
+    let superSecretToken = '';
+    let adultSearchResults = [];
 
     searchInput.addEventListener('input', (e) => {
       clearTimeout(debounceTimer);
@@ -866,6 +947,122 @@
     }
 
     loadTrending();
+
+    superSecretLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (isAuthenticated) {
+        showAdultSection();
+      } else {
+        loginModal.classList.add('active');
+        secretPassword.value = '';
+        loginError.style.display = 'none';
+      }
+    });
+
+    loginBackdrop.addEventListener('click', () => loginModal.classList.remove('active'));
+    loginBtn.addEventListener('click', authenticate);
+
+    async function authenticate() {
+      const password = secretPassword.value;
+      try {
+        const response = await fetch('/api/adult/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password })
+        });
+        const data = await response.json();
+        if (data.authenticated) {
+          isAuthenticated = true;
+          superSecretToken = password;
+          loginModal.classList.remove('active');
+          showAdultSection();
+        } else {
+          loginError.textContent = data.error || 'Invalid password';
+          loginError.style.display = 'block';
+        }
+      } catch (err) {
+        loginError.textContent = 'Error: ' + err.message;
+        loginError.style.display = 'block';
+      }
+    }
+
+    async function showAdultSection() {
+      resultsTitle.textContent = 'Adult Section';
+      heroSection.style.display = 'none';
+      const query = searchInput.value.trim() || '热门';
+      await searchAdultContent(query);
+    }
+
+    async function searchAdultContent(query) {
+      try {
+        const response = await fetch(`/api/adult/search?q=${encodeURIComponent(query)}`, {
+          headers: { 'Authorization': superSecretToken }
+        });
+        if (!response.ok) throw new Error('Search failed: ' + response.status);
+        const data = await response.json();
+        adultSearchResults = data.results || [];
+        displayAdultResults(adultSearchResults);
+      } catch (err) {
+        console.error('Adult search error:', err);
+        resultsGrid.innerHTML = `<div class="empty-state"><p>Error: ${err.message}</p></div>`;
+      }
+    }
+
+    function displayAdultResults(results) {
+      if (!results || results.length === 0) {
+        resultsGrid.innerHTML = '<div class="empty-state"><p>No results found</p></div>';
+        return;
+      }
+      resultsGrid.innerHTML = results.map(video => createAdultCard(video)).join('');
+      resultsGrid.querySelectorAll('.card').forEach((card, index) => {
+        card.addEventListener('click', () => playAdultVideo(results[index]));
+      });
+    }
+
+    function createAdultCard(video) {
+      const title = video.title || video.name || 'Untitled';
+      const image = video.thumbnail || video.poster || '';
+      const rating = video.rating || video.views || '';
+
+      return `
+        <div class="card adult-card">
+          ${image ? `<img class="card-poster" src="${image}" alt="${title}" loading="lazy">` : '<div class="no-poster"><span>No Image</span></div>'}
+          <div class="card-overlay"></div>
+          <span class="card-badge">★ ${rating}</span>
+          <div class="card-info">
+            <div class="card-title">${title}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function playAdultVideo(video) {
+      const embedUrl = video.embed_url || video.url || '';
+      if (embedUrl) {
+        adultVideoPlayer.src = embedUrl;
+        adultTitle.textContent = video.title || video.name || '';
+        adultMeta.innerHTML = `<span>${video.duration || ''}</span><span>${video.views || ''} views</span>`;
+        adultOverview.textContent = video.description || '';
+        adultModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      }
+    }
+
+    adultBackdrop.addEventListener('click', closeAdultModal);
+    adultClose.addEventListener('click', closeAdultModal);
+
+    function closeAdultModal() {
+      adultModal.classList.remove('active');
+      document.body.style.overflow = '';
+      adultVideoPlayer.src = '';
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (adultModal.classList.contains('active')) closeAdultModal();
+        if (loginModal.classList.contains('active')) loginModal.classList.remove('active');
+      }
+    });
   </script>
 </body>
 </html>

@@ -1,13 +1,22 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const https = require('https');
 
 const PORT = process.env.PORT || 3000;
 const API_KEY = process.env.TMDB_API_KEY;
 const API_BASE = 'https://api.themoviedb.org/3';
 
+const SUPER_SECRET_PASS = process.env.SUPER_SECRET_PASS || '';
+const SECRET_KEY = process.env.SECRET_KEY || '';
+const ADULT_API_KEY = process.env.ADULT_API_KEY || '';
+const ADULT_API_BASE = 'https://api.adultdatalink.com';
+
 console.log('PORT:', PORT);
-console.log('API_KEY set:', !!API_KEY);
+console.log('TMDB_API_KEY set:', !!API_KEY);
+console.log('SUPER_SECRET_PASS set:', !!SUPER_SECRET_PASS);
+console.log('SECRET_KEY set:', !!SECRET_KEY);
+console.log('ADULT_API_KEY set:', !!ADULT_API_KEY);
 
 const MIME_TYPES = {
   '.html': 'text/html',
@@ -63,6 +72,54 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  if (req.url.startsWith('/api/adult/login')) {
+    const body = [];
+    req.on('data', chunk => body.push(chunk));
+    req.on('end', () => {
+      const data = JSON.parse(Buffer.concat(body).toString());
+      const password = data.password;
+      const isValid = password === SUPER_SECRET_PASS || (SECRET_KEY && password === SECRET_KEY);
+      if (isValid) {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ authenticated: true }));
+      } else {
+        res.writeHead(401, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Invalid password' }));
+      }
+    });
+    return;
+  }
+
+  if (req.url.startsWith('/api/adult/search')) {
+    const authHeader = req.headers['authorization'];
+    const isAuthorized = authHeader === SUPER_SECRET_PASS || (SECRET_KEY && authHeader === SECRET_KEY);
+    if (!isAuthorized) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Unauthorized' }));
+      return;
+    }
+    const query = req.url.split('?')[1];
+    const url = `${ADULT_API_BASE}/search?${query}&api_key=${ADULT_API_KEY}`;
+    console.log('AdultDataLink search:', url.replace(ADULT_API_KEY, 'HIDDEN'));
+    proxyAdultRequest(url, res);
+    return;
+  }
+
+  if (req.url.startsWith('/api/adult/video')) {
+    const authHeader = req.headers['authorization'];
+    const isAuthorized = authHeader === SUPER_SECRET_PASS || (SECRET_KEY && authHeader === SECRET_KEY);
+    if (!isAuthorized) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Unauthorized' }));
+      return;
+    }
+    const query = req.url.split('?')[1];
+    const url = `${ADULT_API_BASE}/video?${query}&api_key=${ADULT_API_KEY}`;
+    console.log('AdultDataLink video:', url.replace(ADULT_API_KEY, 'HIDDEN'));
+    proxyAdultRequest(url, res);
+    return;
+  }
+
   let filePath = req.url === '/' ? '/index.html' : req.url;
   filePath = path.join(__dirname, filePath);
 
@@ -86,8 +143,6 @@ const server = http.createServer((req, res) => {
     }
   });
 });
-
-const https = require('https');
 
 function proxyRequest(url, res) {
   console.log('Proxying to:', url.replace(API_KEY, 'HIDDEN'));
@@ -113,6 +168,38 @@ function proxyRequest(url, res) {
   
   request.setTimeout(10000, () => {
     console.error('Request timeout');
+    request.destroy();
+    res.writeHead(504);
+    res.end(JSON.stringify({ error: 'Timeout' }));
+  });
+}
+
+function proxyAdultRequest(url, res) {
+  console.log('Proxying to AdultDataLink:', url.replace(ADULT_API_KEY, 'HIDDEN'));
+  
+  const request = https.get(url, {
+    headers: { 'Authorization': `Bearer ${ADULT_API_KEY}` }
+  }, (proxyRes) => {
+    let data = '';
+    proxyRes.on('data', chunk => data += chunk);
+    proxyRes.on('end', () => {
+      console.log('AdultDataLink response status:', proxyRes.statusCode);
+      res.writeHead(proxyRes.statusCode, {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      });
+      res.end(data);
+    });
+  });
+  
+  request.on('error', (err) => {
+    console.error('AdultDataLink proxy error:', err.message);
+    res.writeHead(502);
+    res.end(JSON.stringify({ error: 'Bad Gateway', details: err.message }));
+  });
+  
+  request.setTimeout(10000, () => {
+    console.error('AdultDataLink request timeout');
     request.destroy();
     res.writeHead(504);
     res.end(JSON.stringify({ error: 'Timeout' }));
