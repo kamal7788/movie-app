@@ -868,8 +868,11 @@
 
       modalOverview.textContent = media.overview || 'No description available.';
 
-      const vidkingUrl = `https://vidking.net/embed/${media.id}`;
+      const vidkingUrl = media.media_type === 'tv'
+        ? `https://www.vidking.net/embed/tv/${media.id}/1/1`
+        : `https://www.vidking.net/embed/movie/${media.id}`;
       watchBtn.href = vidkingUrl;
+      watchBtn.target = '_blank';
 
       detailModal.classList.add('active');
       document.body.style.overflow = 'hidden';
