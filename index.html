@@ -103,45 +103,20 @@
       pointer-events: none;
     }
 
-    .api-key-section {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-
-    .api-key-input {
+    .admin-btn {
       padding: 0.5rem 1rem;
-      background: var(--surface);
+      background: transparent;
       border: 1px solid var(--border);
+      color: var(--text-muted);
       border-radius: 8px;
-      color: var(--text);
-      font-size: 0.875rem;
-      width: 180px;
-    }
-
-    .api-key-input:focus {
-      outline: none;
-      border-color: var(--primary);
-    }
-
-    .btn {
-      padding: 0.5rem 1.25rem;
-      border: none;
-      border-radius: 8px;
-      font-weight: 600;
       cursor: pointer;
-      transition: all 0.3s ease;
       font-size: 0.875rem;
+      transition: all 0.3s ease;
     }
 
-    .btn-primary {
-      background: var(--primary);
+    .admin-btn:hover {
+      border-color: var(--primary);
       color: var(--text);
-    }
-
-    .btn-primary:hover {
-      background: var(--primary-glow);
-      transform: translateY(-2px);
     }
 
     .hero {
@@ -214,20 +189,74 @@
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
       gap: 1.5rem;
     }
 
-    @media (min-width: 640px) {
-      .grid {
-        grid-template-columns: repeat(3, 1fr);
-      }
+    .video-card {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--surface);
+      cursor: pointer;
+      transition: all 0.3s ease;
     }
 
-    @media (min-width: 1024px) {
-      .grid {
-        grid-template-columns: repeat(5, 1fr);
-      }
+    .video-card:hover {
+      transform: scale(1.03);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    }
+
+    .video-card-poster {
+      width: 100%;
+      aspect-ratio: 16/9;
+      object-fit: cover;
+      display: block;
+    }
+
+    .video-card-info {
+      padding: 1rem;
+      background: var(--surface);
+    }
+
+    .video-card-title {
+      font-weight: 600;
+      font-size: 1rem;
+      line-height: 1.3;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin-bottom: 0.5rem;
+    }
+
+    .video-card-meta {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    .video-card-duration {
+      background: rgba(0,0,0,0.8);
+      position: absolute;
+      bottom: 60px;
+      right: 0.5rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .no-poster {
+      width: 100%;
+      aspect-ratio: 16/9;
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
     }
 
     .card {
@@ -325,24 +354,6 @@
       margin-top: 0.25rem;
     }
 
-    .no-poster {
-      width: 100%;
-      height: 100%;
-      background: var(--surface);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      gap: 1rem;
-      color: var(--text-muted);
-    }
-
-    .no-poster svg {
-      width: 48px;
-      height: 48px;
-      opacity: 0.5;
-    }
-
     .skeleton {
       background: linear-gradient(90deg, var(--surface) 25%, var(--surface-hover) 50%, var(--surface) 75%);
       background-size: 200% 100%;
@@ -384,8 +395,6 @@
       max-height: 90vh;
       overflow-y: auto;
       animation: modalIn 0.3s ease;
-      position: relative;
-      z-index: 1001;
     }
 
     @keyframes modalIn {
@@ -437,20 +446,6 @@
       border: none;
     }
 
-    .modal-backdrop-img {
-      position: relative;
-      height: 400px;
-      background-size: cover;
-      background-position: center;
-    }
-
-    .modal-backdrop-img::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(to bottom, transparent 50%, var(--surface));
-    }
-
     .modal-body {
       padding: 1.5rem 2rem 2rem;
     }
@@ -497,26 +492,67 @@
       margin-bottom: 1.5rem;
     }
 
-    .watch-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 1rem 2rem;
-      background: var(--primary);
-      color: var(--text);
-      font-size: 1.1rem;
-      font-weight: 700;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      text-decoration: none;
-      transition: all 0.3s ease;
+    .login-content {
+      padding: 2rem;
+      text-align: center;
+      position: relative;
+      z-index: 1001;
     }
 
-    .watch-btn:hover {
+    .login-content input {
+      width: 100%;
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    .btn {
+      padding: 0.5rem 1.25rem;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 0.875rem;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: var(--text);
+    }
+
+    .btn-primary:hover {
       background: var(--primary-glow);
       transform: translateY(-2px);
-      box-shadow: 0 10px 30px rgba(229, 9, 20, 0.4);
+    }
+
+    .admin-toolbar {
+      margin-bottom: 1rem;
+      gap: 1rem;
+      display: none;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .admin-toolbar.visible {
+      display: flex;
+    }
+
+    .admin-toolbar select,
+    .admin-toolbar button {
+      padding: 0.5rem 1rem;
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .admin-toolbar button:hover {
+      background: var(--surface-hover);
+    }
+
+    .admin-toolbar span {
+      color: var(--text-muted);
     }
 
     .spinner {
@@ -566,58 +602,12 @@
         align-items: stretch;
       }
 
-      .api-key-section {
-        width: 100%;
-      }
-    }
-
-    .super-secret-link {
-      color: var(--text-muted);
-      text-decoration: none;
-      font-size: 0.875rem;
-      padding: 0.5rem 1rem;
-      transition: color 0.3s;
-    }
-
-    .super-secret-link:hover {
-      color: var(--primary);
-    }
-
-    .login-content {
-      padding: 2rem;
-      text-align: center;
-      position: relative;
-      z-index: 1001;
-    }
-
-    #secretPassword {
-      width: 100%;
-      text-align: center;
-    }
-
-    .adult-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 1.5rem;
-      margin-top: 1.5rem;
-    }
-
-    .adult-section {
-      padding: 2rem 0;
-    }
-      color: var(--primary);
-    }
-
-      .api-key-input {
-        flex: 1;
-      }
-
       .hero {
         height: 50vh;
       }
 
-      .modal-backdrop-img {
-        height: 250px;
+      .modal-player-container {
+        aspect-ratio: 16/9;
       }
 
       .modal-body {
@@ -634,7 +624,7 @@
   <header>
     <div class="container">
       <div class="header-content">
-        <a href="#" class="logo">STREAM<span>FLIX</span></a>
+        <a href="/" class="logo">STREAM<span>FLIX</span></a>
         <div class="search-container">
           <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="11" cy="11" r="8"></circle>
@@ -642,7 +632,7 @@
           </svg>
           <input type="text" class="search-input" id="searchInput" placeholder="Search movies, TV shows...">
         </div>
-        <a href="#" class="super-secret-link" id="superSecretLink">Super Secret</a>
+        <button class="admin-btn" id="adminBtn">Admin</button>
       </div>
     </div>
   </header>
@@ -659,8 +649,8 @@
     <section class="section">
       <div class="container">
         <h2 class="section-title" id="resultsTitle">Trending</h2>
-        <div class="adult-toolbar" id="adultToolbar" style="display:none; margin-bottom: 1rem; gap: 1rem; display: flex; flex-wrap: wrap; align-items: center;">
-          <select id="sortSelect" style="padding: 0.5rem; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 8px;">
+        <div class="admin-toolbar" id="adminToolbar">
+          <select id="sortSelect">
             <option value="most-popular">Most Popular</option>
             <option value="latest">Latest</option>
             <option value="longest">Longest</option>
@@ -669,14 +659,30 @@
             <option value="top-weekly">Top Weekly</option>
             <option value="top-monthly">Top Monthly</option>
           </select>
-          <button id="prevPage" style="padding: 0.5rem 1rem; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 8px;">Prev</button>
-          <span id="pageInfo" style="color: var(--text-muted);">Page 1</span>
-          <button id="nextPage" style="padding: 0.5rem 1rem; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 8px;">Next</button>
+          <button id="prevPage">Prev</button>
+          <span id="pageInfo">Page 1</span>
+          <button id="nextPage">Next</button>
         </div>
         <div class="grid" id="resultsGrid"></div>
       </div>
     </section>
   </main>
+
+  <div class="modal" id="loginModal">
+    <div class="modal-backdrop" style="position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:999;"></div>
+    <div class="modal-content login-content">
+      <button class="modal-close" id="loginClose" style="position:absolute;top:1rem;right:1rem;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 6 6 18M6 6l12 12"></path>
+        </svg>
+      </button>
+      <h2 class="modal-title">Admin Login</h2>
+      <p style="color: var(--text-muted); margin-bottom: 1rem;">Enter password</p>
+      <input type="password" class="search-input" id="adminPassword" placeholder="Password">
+      <button class="btn btn-primary" id="loginBtn" style="width: 100%;">Login</button>
+      <p id="loginError" style="color: var(--primary); margin-top: 1rem; display: none;"></p>
+    </div>
+  </div>
 
   <div class="modal" id="detailModal">
     <div class="modal-backdrop" id="modalBackdrop"></div>
@@ -694,41 +700,6 @@
         <div class="modal-meta" id="modalMeta"></div>
         <div class="modal-genres" id="modalGenres"></div>
         <p class="modal-overview" id="modalOverview"></p>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal" id="loginModal">
-    <div class="modal-backdrop" id="loginBackdrop" style="position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:999;"></div>
-    <div class="modal-content login-content">
-      <button class="modal-close" id="loginClose" style="position:absolute;top:1rem;right:1rem;z-index:1001;">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M18 6 6 18M6 6l12 12"></path>
-        </svg>
-      </button>
-      <h2 class="modal-title">Super Secret</h2>
-      <p style="color: var(--text-muted); margin-bottom: 1rem;">Enter password to access adult content</p>
-      <input type="password" class="search-input" id="secretPassword" placeholder="Password" style="margin-bottom: 1rem;">
-      <button class="btn btn-primary" id="loginBtn" style="width: 100%;">Access</button>
-      <p id="loginError" style="color: var(--primary); margin-top: 1rem; display: none;"></p>
-    </div>
-  </div>
-
-  <div class="modal" id="adultModal">
-    <div class="modal-backdrop" id="adultBackdrop"></div>
-    <div class="modal-content">
-      <button class="modal-close" id="adultClose">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M18 6 6 18M6 6l12 12"></path>
-        </svg>
-      </button>
-      <div class="modal-player-container">
-        <iframe id="adultVideoPlayer" src="" allowfullscreen></iframe>
-      </div>
-      <div class="modal-body">
-        <h2 class="modal-title" id="adultTitle"></h2>
-        <div class="modal-meta" id="adultMeta"></div>
-        <p class="modal-overview" id="adultOverview"></p>
       </div>
     </div>
   </div>
@@ -762,30 +733,22 @@
     const modalOverview = document.getElementById('modalOverview');
 
     const loginModal = document.getElementById('loginModal');
-    const secretPassword = document.getElementById('secretPassword');
+    const adminPassword = document.getElementById('adminPassword');
     const loginBtn = document.getElementById('loginBtn');
     const loginClose = document.getElementById('loginClose');
     const loginError = document.getElementById('loginError');
-    const superSecretLink = document.getElementById('superSecretLink');
-    const adultToolbar = document.getElementById('adultToolbar');
+    const adminBtn = document.getElementById('adminBtn');
+    const adminToolbar = document.getElementById('adminToolbar');
     const sortSelect = document.getElementById('sortSelect');
     const prevPage = document.getElementById('prevPage');
     const nextPage = document.getElementById('nextPage');
     const pageInfo = document.getElementById('pageInfo');
-    const adultModal = document.getElementById('adultModal');
-    const adultBackdrop = document.getElementById('adultBackdrop');
-    const adultClose = document.getElementById('adultClose');
-    const adultVideoPlayer = document.getElementById('adultVideoPlayer');
-    const adultTitle = document.getElementById('adultTitle');
-    const adultMeta = document.getElementById('adultMeta');
-    const adultOverview = document.getElementById('adultOverview');
 
-    let isAuthenticated = false;
-    let superSecretToken = '';
-    let adultSearchResults = [];
-    let inAdultMode = false;
-    let adultPage = 1;
-    let adultOrder = 'most-popular';
+    let isAdmin = false;
+    let adminToken = '';
+    let adminResults = [];
+    let adminPage = 1;
+    let adminOrder = 'most-popular';
     let totalPages = 1;
 
     searchInput.addEventListener('input', (e) => {
@@ -793,14 +756,14 @@
       debounceTimer = setTimeout(() => {
         const query = e.target.value.trim();
         if (query) {
-          if (inAdultMode) {
-            searchAdultContent(query);
+          if (isAdmin) {
+            searchAdminContent(query);
           } else {
             searchMedia(query);
           }
         } else {
-          if (inAdultMode) {
-            searchAdultContent('all');
+          if (isAdmin) {
+            searchAdminContent('all');
           } else {
             loadStreaming();
           }
@@ -810,11 +773,6 @@
 
     modalBackdrop.addEventListener('click', closeModal);
     modalClose.addEventListener('click', closeModal);
-
-    function hideAdultToolbar() {
-      adultToolbar.style.display = 'none';
-    }
-    hideAdultToolbar();
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && detailModal.classList.contains('active')) {
@@ -827,12 +785,9 @@
         const apiUrl = url.includes('search') 
           ? `/api/search?${url.split('?')[1]}`
           : '/api/trending';
-        console.log('Fetching:', apiUrl);
         const response = await fetch(apiUrl);
         if (!response.ok) throw new Error('API request failed: ' + response.status);
-        const data = await response.json();
-        console.log('Got data:', data);
-        return data;
+        return await response.json();
       } catch (error) {
         console.error('Fetch error:', error);
         resultsGrid.innerHTML = `
@@ -924,15 +879,8 @@
       return `
         <div class="card">
           ${posterUrl
-            ? `<img class="card-poster" src="${posterUrl}" alt="${title}" loading="lazy" onerror="this.parentElement.classList.add('no-poster'); this.parentElement.innerHTML='<div class=\\'no-poster\\'><svg viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'2\\'><rect x=\\'3\\' y=\\'3\\' width=\\'18\\' height=\\'18\\' rx=\\'2\\' ry=\\'2\\'></rect><circle cx=\\'8.5\\' cy=\\'8.5\\' r=\\'1.5\\'></circle><polyline points=\\'21 15 16 10 5 21\\'></polyline></svg><span>No Image</span></div>'">`
-            : `<div class="no-poster">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                  <polyline points="21 15 16 10 5 21"></polyline>
-                </svg>
-                <span>No Image</span>
-              </div>`
+            ? `<img class="card-poster" src="${posterUrl}" alt="${title}" loading="lazy">`
+            : `<div class="no-poster"><span>No Image</span></div>`
           }
           <div class="card-overlay"></div>
           <span class="card-badge">★ ${rating || 'N/A'}</span>
@@ -991,37 +939,33 @@
       document.getElementById('videoPlayer').src = '';
     }
 
-    loadStreaming();
-
-    superSecretLink.addEventListener('click', (e) => {
-      e.preventDefault();
-      if (isAuthenticated) {
-        showAdultSection();
-      } else {
-        loginModal.classList.add('active');
-        secretPassword.value = '';
-        loginError.style.display = 'none';
-      }
+    adminBtn.addEventListener('click', () => {
+      loginModal.classList.add('active');
+      adminPassword.value = '';
+      loginError.style.display = 'none';
     });
 
-    loginBackdrop.addEventListener('click', () => loginModal.classList.remove('active'));
     loginClose.addEventListener('click', () => loginModal.classList.remove('active'));
-    loginBtn.addEventListener('click', authenticate);
+    loginBtn.addEventListener('click', login);
 
-    async function authenticate() {
-      const password = secretPassword.value;
+    adminPassword.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') login();
+    });
+
+    async function login() {
+      const password = adminPassword.value;
       try {
-        const response = await fetch('/api/adult/login', {
+        const response = await fetch('/api/admin/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ password })
         });
         const data = await response.json();
         if (data.authenticated) {
-          isAuthenticated = true;
-          superSecretToken = password;
+          isAdmin = true;
+          adminToken = password;
           loginModal.classList.remove('active');
-          showAdultSection();
+          showAdminSection();
         } else {
           loginError.textContent = data.error || 'Invalid password';
           loginError.style.display = 'block';
@@ -1032,136 +976,112 @@
       }
     }
 
-    async function showAdultSection() {
-      inAdultMode = true;
-      adultPage = 1;
-      resultsTitle.textContent = 'Adult Section';
+    async function showAdminSection() {
+      adminPage = 1;
+      resultsTitle.textContent = 'Admin Content';
       heroSection.style.display = 'none';
-      adultToolbar.style.display = 'flex';
-      searchInput.placeholder = 'Search adult videos...';
-      const query = searchInput.value.trim() || 'all';
-      await searchAdultContent(query);
+      adminToolbar.classList.add('visible');
+      searchInput.placeholder = 'Search videos...';
+      await searchAdminContent('all');
     }
 
     sortSelect.addEventListener('change', async () => {
-      adultOrder = sortSelect.value;
-      adultPage = 1;
+      adminOrder = sortSelect.value;
+      adminPage = 1;
       const query = searchInput.value.trim() || 'all';
-      await searchAdultContent(query);
+      await searchAdminContent(query);
     });
 
     nextPage.addEventListener('click', async () => {
-      if (adultPage < totalPages) {
-        adultPage++;
+      if (adminPage < totalPages) {
+        adminPage++;
         const query = searchInput.value.trim() || 'all';
-        await searchAdultContent(query);
+        await searchAdminContent(query);
       }
     });
 
     prevPage.addEventListener('click', async () => {
-      if (adultPage > 1) {
-        adultPage--;
+      if (adminPage > 1) {
+        adminPage--;
         const query = searchInput.value.trim() || 'all';
-        await searchAdultContent(query);
+        await searchAdminContent(query);
       }
     });
 
-    async function searchAdultContent(query) {
+    async function searchAdminContent(query) {
       try {
-        const response = await fetch(`/api/adult/search?q=${encodeURIComponent(query)}&page=${adultPage}&order=${adultOrder}`, {
-          headers: { 'Authorization': superSecretToken }
+        const response = await fetch(`/api/admin/search?q=${encodeURIComponent(query)}&page=${adminPage}&order=${adminOrder}`, {
+          headers: { 'Authorization': adminToken }
         });
-        console.log('Adult search response status:', response.status);
         if (!response.ok) throw new Error('Search failed: ' + response.status);
         const data = await response.json();
-        console.log('Adult search data keys:', Object.keys(data));
-        adultSearchResults = data.videos || [];
-        if (adultSearchResults.length === 0 && data.movies) {
-          adultSearchResults = data.movies;
-        }
+        adminResults = data.videos || data.movies || [];
         totalPages = data.total_pages || 1;
-        console.log('Adult results count:', adultSearchResults.length, 'total pages:', totalPages);
-        displayAdultResults(adultSearchResults);
-        pageInfo.textContent = `Page ${adultPage} of ${totalPages}`;
+        displayAdminResults(adminResults);
+        pageInfo.textContent = `Page ${adminPage} of ${totalPages}`;
       } catch (err) {
-        console.error('Adult search error:', err);
+        console.error('Admin search error:', err);
         resultsGrid.innerHTML = `<div class="empty-state"><p>Error: ${err.message}</p></div>`;
       }
     }
 
-    function displayAdultResults(results) {
+    function displayAdminResults(results) {
       if (!results || results.length === 0) {
         resultsGrid.innerHTML = '<div class="empty-state"><p>No results found</p></div>';
         return;
       }
-      resultsGrid.innerHTML = results.map(video => createAdultCard(video)).join('');
-      resultsGrid.querySelectorAll('.card').forEach((card, index) => {
-        card.addEventListener('click', () => playAdultVideo(results[index]));
+      resultsGrid.innerHTML = results.map(video => createVideoCard(video)).join('');
+      resultsGrid.querySelectorAll('.video-card').forEach((card, index) => {
+        card.addEventListener('click', () => playVideo(results[index]));
       });
     }
 
-    function createAdultCard(video) {
+    function createVideoCard(video) {
       const title = video.title || 'Untitled';
       const thumbs = video.thumbs || [];
       const image = thumbs.length > 0 ? thumbs[thumbs.length - 1].src : '';
       const duration = video.duration ? formatDuration(video.duration) : '';
-      const rating = video.rating ? video.rating.toFixed(1) + '%' : '';
 
       return `
-        <div class="card adult-card">
-          ${image ? `<img class="card-poster" src="${image}" alt="${title}" loading="lazy">` : '<div class="no-poster"><span>No Image</span></div>'}
-          <div class="card-overlay"></div>
-          ${rating ? `<span class="card-badge">★ ${rating}</span>` : ''}
-          <div class="card-info">
-            <div class="card-title">${title}</div>
-            ${duration ? `<div class="card-year">${duration}</div>` : ''}
+        <div class="video-card">
+          ${image 
+            ? `<img class="video-card-poster" src="${image}" alt="${title}" loading="lazy">` 
+            : `<div class="no-poster"><span>No Image</span></div>`
+          }
+          ${duration ? `<span class="video-card-duration">${duration}</span>` : ''}
+          <div class="video-card-info">
+            <div class="video-card-title">${title}</div>
+            <div class="video-card-meta">
+              ${video.rating ? `<span>★ ${video.rating.toFixed(1)}%</span>` : ''}
+            </div>
           </div>
         </div>
       `;
     }
 
     function formatDuration(seconds) {
-      const mins = Math.floor(seconds / 60);
+      const hrs = Math.floor(seconds / 3600);
+      const mins = Math.floor((seconds % 3600) / 60);
       const secs = seconds % 60;
-      return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+      if (hrs > 0) {
+        return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+      }
+      return `${mins}:${secs.toString().padStart(2, '0')}`;
     }
 
-    function playAdultVideo(video) {
-      const title = video.title || '';
-      const duration = video.duration ? formatDuration(video.duration) : '';
-      const views = video.views || '';
-      const viewsStr = views ? `${Number(views).toLocaleString()} views` : '';
-      
-      adultTitle.textContent = title;
-      adultMeta.innerHTML = `
-        <span>${duration}</span>
-        <span>${viewsStr}</span>
-      `;
-      
+    function playVideo(video) {
       if (video.embed) {
-        adultVideoPlayer.src = video.embed;
-        adultModal.classList.add('active');
+        document.getElementById('videoPlayer').src = video.embed;
+        modalTitle.textContent = video.title || '';
+        modalMeta.innerHTML = video.duration ? `<span>${formatDuration(video.duration)}</span>` : '';
+        modalGenres.innerHTML = '';
+        modalOverview.textContent = video.description || '';
+        detailModal.classList.add('active');
         document.body.style.overflow = 'hidden';
-      } else {
-        adultMeta.innerHTML += '<p style="margin-top:1rem;">No embed available</p>';
       }
     }
 
-    adultBackdrop.addEventListener('click', closeAdultModal);
-    adultClose.addEventListener('click', closeAdultModal);
-
-    function closeAdultModal() {
-      adultModal.classList.remove('active');
-      document.body.style.overflow = '';
-      adultVideoPlayer.src = '';
-    }
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        if (adultModal.classList.contains('active')) closeAdultModal();
-        if (loginModal.classList.contains('active')) loginModal.classList.remove('active');
-      }
-    });
+    loadStreaming();
   </script>
 </body>
 </html>
