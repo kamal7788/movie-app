@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -12,7 +12,7 @@ export default function Admin() {
   const { user, createUser, deleteUser, resetUserPassword, getAllUsers } = useAuth();
   const navigate = useNavigate();
 
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     setLoading(true);
     try {
       const data = await getAllUsers();
@@ -22,7 +22,7 @@ export default function Admin() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getAllUsers]);
 
   useEffect(() => {
     if (!user?.is_admin) {
@@ -30,7 +30,7 @@ export default function Admin() {
       return;
     }
     loadUsers();
-  }, [user, navigate, getAllUsers]);
+  }, [user, navigate, loadUsers]);
 
   const handleAddUser = async (e) => {
     e.preventDefault();
