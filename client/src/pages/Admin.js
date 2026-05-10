@@ -49,7 +49,7 @@ export default function Admin() {
   };
 
   const handleDeleteUser = async (id) => {
-    if (!confirm('Are you sure you want to delete this user? All profiles and watchlist will be deleted.')) {
+    if (!window.confirm('Are you sure you want to delete this user? All profiles and watchlist will be deleted.')) {
       return;
     }
     
