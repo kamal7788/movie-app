@@ -531,10 +531,19 @@
       display: none;
       flex-wrap: wrap;
       align-items: center;
+      justify-content: space-between;
     }
 
     .admin-toolbar.visible {
       display: flex;
+    }
+
+    .admin-toolbar-left,
+    .admin-toolbar-right {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      flex-wrap: wrap;
     }
 
     .admin-toolbar select,
@@ -552,6 +561,42 @@
     }
 
     .admin-toolbar span {
+      color: var(--text-muted);
+    }
+
+    .bottom-pagination {
+      display: none;
+      justify-content: center;
+      align-items: center;
+      gap: 1rem;
+      padding: 2rem 0;
+      margin-top: 2rem;
+    }
+
+    .bottom-pagination.visible {
+      display: flex;
+    }
+
+    .bottom-pagination button {
+      padding: 0.75rem 1.5rem;
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .bottom-pagination button:hover:not(:disabled) {
+      background: var(--surface-hover);
+    }
+
+    .bottom-pagination button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .bottom-pagination span {
       color: var(--text-muted);
     }
 
@@ -650,20 +695,38 @@
       <div class="container">
         <h2 class="section-title" id="resultsTitle">Trending</h2>
         <div class="admin-toolbar" id="adminToolbar">
-          <select id="sortSelect">
-            <option value="most-popular">Most Popular</option>
-            <option value="latest">Latest</option>
-            <option value="longest">Longest</option>
-            <option value="shortest">Shortest</option>
-            <option value="top-rated">Top Rated</option>
-            <option value="top-weekly">Top Weekly</option>
-            <option value="top-monthly">Top Monthly</option>
-          </select>
-          <button id="prevPage">Prev</button>
-          <span id="pageInfo">Page 1</span>
-          <button id="nextPage">Next</button>
+          <div class="admin-toolbar-left">
+            <select id="sortSelect">
+              <option value="most-popular">Most Popular</option>
+              <option value="latest">Latest</option>
+              <option value="longest">Longest</option>
+              <option value="shortest">Shortest</option>
+              <option value="top-rated">Top Rated</option>
+              <option value="top-weekly">Top Weekly</option>
+              <option value="top-monthly">Top Monthly</option>
+            </select>
+            <select id="lengthFilter">
+              <option value="">Any Length</option>
+              <option value="0-300">Under 5 min</option>
+              <option value="300-600">5-10 min</option>
+              <option value="600-1200">10-20 min</option>
+              <option value="1200-2400">20-40 min</option>
+              <option value="2400-3600">40-60 min</option>
+              <option value="3600-99999">Over 1 hour</option>
+            </select>
+          </div>
+          <div class="admin-toolbar-right">
+            <button id="prevPage">Prev</button>
+            <span id="pageInfo">Page 1</span>
+            <button id="nextPage">Next</button>
+          </div>
         </div>
         <div class="grid" id="resultsGrid"></div>
+        <div class="bottom-pagination" id="bottomPagination">
+          <button id="prevPageBottom">Prev</button>
+          <span id="pageInfoBottom">Page 1</span>
+          <button id="nextPageBottom">Next</button>
+        </div>
       </div>
     </section>
   </main>
@@ -739,16 +802,22 @@
     const loginError = document.getElementById('loginError');
     const adminBtn = document.getElementById('adminBtn');
     const adminToolbar = document.getElementById('adminToolbar');
+    const bottomPagination = document.getElementById('bottomPagination');
     const sortSelect = document.getElementById('sortSelect');
+    const lengthFilter = document.getElementById('lengthFilter');
     const prevPage = document.getElementById('prevPage');
     const nextPage = document.getElementById('nextPage');
+    const prevPageBottom = document.getElementById('prevPageBottom');
+    const nextPageBottom = document.getElementById('nextPageBottom');
     const pageInfo = document.getElementById('pageInfo');
+    const pageInfoBottom = document.getElementById('pageInfoBottom');
 
     let isAdmin = false;
     let adminToken = '';
     let adminResults = [];
     let adminPage = 1;
     let adminOrder = 'most-popular';
+    let adminLengthFilter = '';
     let totalPages = 1;
 
     searchInput.addEventListener('input', (e) => {
@@ -981,6 +1050,7 @@
       resultsTitle.textContent = 'Admin Content';
       heroSection.style.display = 'none';
       adminToolbar.classList.add('visible');
+      bottomPagination.classList.add('visible');
       searchInput.placeholder = 'Search videos...';
       await searchAdminContent('all');
     }
@@ -992,21 +1062,34 @@
       await searchAdminContent(query);
     });
 
-    nextPage.addEventListener('click', async () => {
-      if (adminPage < totalPages) {
-        adminPage++;
-        const query = searchInput.value.trim() || 'all';
-        await searchAdminContent(query);
-      }
+    lengthFilter.addEventListener('change', async () => {
+      adminLengthFilter = lengthFilter.value;
+      adminPage = 1;
+      const query = searchInput.value.trim() || 'all';
+      await searchAdminContent(query);
     });
 
-    prevPage.addEventListener('click', async () => {
-      if (adminPage > 1) {
-        adminPage--;
+    function updatePageInfo() {
+      pageInfo.textContent = `Page ${adminPage} of ${totalPages}`;
+      pageInfoBottom.textContent = `Page ${adminPage} of ${totalPages}`;
+      prevPage.disabled = adminPage <= 1;
+      nextPage.disabled = adminPage >= totalPages;
+      prevPageBottom.disabled = adminPage <= 1;
+      nextPageBottom.disabled = adminPage >= totalPages;
+    }
+
+    function goToPage(newPage) {
+      if (newPage >= 1 && newPage <= totalPages) {
+        adminPage = newPage;
         const query = searchInput.value.trim() || 'all';
-        await searchAdminContent(query);
+        searchAdminContent(query);
       }
-    });
+    }
+
+    nextPage.addEventListener('click', () => goToPage(adminPage + 1));
+    prevPage.addEventListener('click', () => goToPage(adminPage - 1));
+    nextPageBottom.addEventListener('click', () => goToPage(adminPage + 1));
+    prevPageBottom.addEventListener('click', () => goToPage(adminPage - 1));
 
     async function searchAdminContent(query) {
       try {
@@ -1014,11 +1097,20 @@
           headers: { 'Authorization': adminToken }
         });
         if (!response.ok) throw new Error('Search failed: ' + response.status);
-        const data = await response.json();
+        let data = await response.json();
         adminResults = data.videos || data.movies || [];
         totalPages = data.total_pages || 1;
+
+        if (adminLengthFilter) {
+          const [min, max] = adminLengthFilter.split('-').map(Number);
+          adminResults = adminResults.filter(v => {
+            const d = v.duration || 0;
+            return d >= min && d <= max;
+          });
+        }
+
         displayAdminResults(adminResults);
-        pageInfo.textContent = `Page ${adminPage} of ${totalPages}`;
+        updatePageInfo();
       } catch (err) {
         console.error('Admin search error:', err);
         resultsGrid.innerHTML = `<div class="empty-state"><p>Error: ${err.message}</p></div>`;
