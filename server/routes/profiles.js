@@ -26,7 +26,7 @@ router.post('/', async (req, res) => {
     const { name, avatar, color } = req.body;
     
     const [profiles] = await pool.query('SELECT * FROM profiles WHERE user_id = ?', [decoded.userId]);
-    if (profiles.length >= 5) return res.status(400).json({ error: 'Max 5 profiles allowed' });
+    if (profiles.length >= 5) return res.status(400).json({ error: 'Maximum 5 profiles allowed' });
 
     const id = uuidv4();
     await pool.query('INSERT INTO profiles (id, user_id, name, avatar, color) VALUES (?, ?, ?, ?, ?)', [

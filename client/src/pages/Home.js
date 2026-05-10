@@ -33,7 +33,7 @@ export default function Home() {
   const [filterType, setFilterType] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const { currentProfile } = useProfile();
   const navigate = useNavigate();
 
@@ -111,6 +111,7 @@ export default function Home() {
             <nav className="nav-links">
               <Link to="/">Home</Link>
               <Link to="/search">Search</Link>
+              {user?.is_admin && <Link to="/admin">Admin</Link>}
             </nav>
             {currentProfile && (
               <div className="profile-menu">
@@ -119,6 +120,7 @@ export default function Home() {
                 </button>
                 <div className="profile-dropdown">
                   <button onClick={() => navigate('/profiles')}>Switch Profile</button>
+                  <button onClick={() => navigate('/settings')}>Settings</button>
                   <button onClick={logout}>Sign Out</button>
                 </div>
               </div>

@@ -55,24 +55,23 @@ export function AuthProvider({ children }) {
     return data;
   };
 
-  const register = async (email, password, name) => {
-    const res = await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, name })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error);
-    localStorage.setItem('token', data.token);
-    setUser(data.user);
-    return data;
-  };
-
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('currentProfile');
     setUser(null);
     setProfiles([]);
+  };
+
+  const changePassword = async (currentPassword, newPassword) => {
+    const token = localStorage.getItem('token');
+    const res = await fetch('/api/auth/change-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ currentPassword, newPassword })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    return data;
   };
 
   const addProfile = async (profile) => {
@@ -111,8 +110,55 @@ export function AuthProvider({ children }) {
     setProfiles(profiles.filter(p => p.id !== id));
   };
 
+  const getAllUsers = async () => {
+    const token = localStorage.getItem('token');
+    const res = await fetch('/api/auth/users', { headers: { Authorization: `Bearer ${token}` } });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    return data.users;
+  };
+
+  const createUser = async (userData) => {
+    const token = localStorage.getItem('token');
+    const res = await fetch('/api/auth/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(userData)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    return data.user;
+  };
+
+  const deleteUser = async (id) => {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`/api/auth/users/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    return data;
+  };
+
+  const resetUserPassword = async (id, newPassword) => {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`/api/auth/users/${id}/password`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ newPassword })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    return data;
+  };
+
   return (
-    <AuthContext.Provider value={{ user, profiles, loading, login, register, logout, addProfile, updateProfile, deleteProfile }}>
+    <AuthContext.Provider value={{ 
+      user, profiles, loading, login, logout, changePassword, 
+      addProfile, updateProfile, deleteProfile,
+      getAllUsers, createUser, deleteUser, resetUserPassword 
+    }}>
       {children}
     </AuthContext.Provider>
   );

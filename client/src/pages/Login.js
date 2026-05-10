@@ -28,6 +28,9 @@ export default function Login() {
     <div className="auth-page">
       <div className="auth-card">
         <h1>STREAMFLIX</h1>
+        <p style={{ textAlign: 'center', marginBottom: '2rem', color: 'var(--text-muted)' }}>
+          Sign in to continue
+        </p>
         <form onSubmit={handleSubmit}>
           {error && <div style={{ color: 'var(--primary)', marginBottom: '1rem', textAlign: 'center' }}>{error}</div>}
           <div className="form-group">
@@ -42,8 +45,8 @@ export default function Login() {
             {loading ? 'Signing In...' : 'Sign In'}
           </button>
         </form>
-        <p className="auth-link">
-          Don't have an account? <Link to="/register">Sign up</Link>
+        <p style={{ textAlign: 'center', marginTop: '1.5rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+          Contact your administrator to create an account
         </p>
       </div>
     </div>

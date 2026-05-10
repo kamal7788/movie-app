@@ -21,6 +21,7 @@ const initializeDatabase = async () => {
         email VARCHAR(255) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL,
         name VARCHAR(255),
+        is_admin TINYINT(1) DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -56,10 +57,21 @@ const initializeDatabase = async () => {
       )
     `);
 
+    const [admins] = await connection.query("SELECT * FROM users WHERE is_admin = 1 LIMIT 1");
+    if (admins.length === 0 && process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
+      const bcrypt = require('bcryptjs');
+      const { v4: uuidv4 } = require('uuid');
+      const hashedPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD, 10);
+      await connection.query(
+        'INSERT INTO users (id, email, password, name, is_admin) VALUES (?, ?, ?, ?, 1)',
+        [uuidv4(), process.env.ADMIN_EMAIL, hashedPassword, 'Admin']
+      );
+      console.log('Admin user created');
+    }
+
     console.log('Database tables initialized successfully');
   } catch (error) {
     console.error('Error initializing database:', error.message);
-    throw error;
   } finally {
     connection.release();
   }
