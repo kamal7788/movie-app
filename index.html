@@ -707,13 +707,14 @@
             </select>
             <select id="lengthFilter">
               <option value="">Any Length</option>
-              <option value="0-300">Under 5 min</option>
-              <option value="300-600">5-10 min</option>
-              <option value="600-1200">10-20 min</option>
-              <option value="1200-2400">20-40 min</option>
-              <option value="2400-3600">40-60 min</option>
-              <option value="3600-99999">Over 1 hour</option>
+              <option value="600">10 min+</option>
+              <option value="1200">20 min+</option>
+              <option value="1800">30 min+</option>
+              <option value="2400">40 min+</option>
+              <option value="3600">60 min+</option>
             </select>
+            <input type="text" id="categoryInclude" placeholder="Include categories (e.g. teen,anal)" style="padding:0.5rem;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;width:200px;">
+            <input type="text" id="categoryExclude" placeholder="Exclude categories" style="padding:0.5rem;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;width:200px;">
           </div>
           <div class="admin-toolbar-right">
             <button id="prevPage">Prev</button>
@@ -811,6 +812,8 @@
     const nextPageBottom = document.getElementById('nextPageBottom');
     const pageInfo = document.getElementById('pageInfo');
     const pageInfoBottom = document.getElementById('pageInfoBottom');
+    const categoryInclude = document.getElementById('categoryInclude');
+    const categoryExclude = document.getElementById('categoryExclude');
 
     let isAdmin = false;
     let adminToken = '';
@@ -1069,6 +1072,22 @@
       await searchAdminContent(query);
     });
 
+    categoryInclude.addEventListener('keypress', async (e) => {
+      if (e.key === 'Enter') {
+        adminPage = 1;
+        const query = searchInput.value.trim() || 'all';
+        await searchAdminContent(query);
+      }
+    });
+
+    categoryExclude.addEventListener('keypress', async (e) => {
+      if (e.key === 'Enter') {
+        adminPage = 1;
+        const query = searchInput.value.trim() || 'all';
+        await searchAdminContent(query);
+      }
+    });
+
     function updatePageInfo() {
       pageInfo.textContent = `Page ${adminPage} of ${totalPages}`;
       pageInfoBottom.textContent = `Page ${adminPage} of ${totalPages}`;
@@ -1102,11 +1121,28 @@
         totalPages = data.total_pages || 1;
 
         if (adminLengthFilter) {
-          const [min, max] = adminLengthFilter.split('-').map(Number);
-          adminResults = adminResults.filter(v => {
-            const d = v.duration || 0;
-            return d >= min && d <= max;
-          });
+          const minLength = parseInt(adminLengthFilter);
+          adminResults = adminResults.filter(v => (v.duration || 0) >= minLength);
+        }
+
+        if (categoryInclude.value.trim()) {
+          const includeCats = categoryInclude.value.toLowerCase().split(',').map(s => s.trim()).filter(Boolean);
+          if (includeCats.length > 0) {
+            adminResults = adminResults.filter(v => {
+              const cats = ((v.categories || []) + ',' + (v.tags || [])).toLowerCase();
+              return includeCats.some(c => cats.includes(c));
+            });
+          }
+        }
+
+        if (categoryExclude.value.trim()) {
+          const excludeCats = categoryExclude.value.toLowerCase().split(',').map(s => s.trim()).filter(Boolean);
+          if (excludeCats.length > 0) {
+            adminResults = adminResults.filter(v => {
+              const cats = ((v.categories || []) + ',' + (v.tags || [])).toLowerCase();
+              return !excludeCats.some(c => cats.includes(c));
+            });
+          }
         }
 
         displayAdminResults(adminResults);
