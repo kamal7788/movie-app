@@ -1,15 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import ReactPlayer from 'react-player';
 import { useProfile } from '../context/ProfileContext';
 
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
-
-const FREE_STREAM_SOURCES = [
-  { name: 'Vidsrc', baseUrl: 'https://vidsrc.vip/embed/' },
-  { name: 'AutoEmbed', baseUrl: 'https://play.accord.space/embed/' },
-  { name: 'PlayerHub', baseUrl: 'https://playerhub.me/embed/' }
-];
 
 export default function Watch() {
   const { type, id } = useParams();
@@ -17,8 +10,9 @@ export default function Watch() {
   const [media, setMedia] = useState(null);
   const [loading, setLoading] = useState(true);
   const [inWatchlist, setInWatchlist] = useState(false);
-  const [currentSource, setCurrentSource] = useState(0);
   const [showSources, setShowSources] = useState(false);
+
+  const VIDKING_EMBED = `https://www.vidking.net/embed/${type}/${id}`;
 
   const loadMedia = useCallback(async () => {
     setLoading(true);
@@ -52,6 +46,53 @@ export default function Watch() {
     fetchWatchlist();
   }, [loadMedia, fetchWatchlist]);
 
+  useEffect(() => {
+    const iframe = document.getElementById('vidking-frame');
+    if (!iframe) return;
+
+    const blockAds = () => {
+      try {
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+        if (iframeDoc) {
+          const style = iframeDoc.createElement('style');
+          style.textContent = `
+            .vidking-ads, .ad-container, .ad-overlay, [class*="ads"], [id*="ads"], 
+            .video-ads, .preroll-ad, [class*="advertisement"], .splash-ad, 
+            .overlay-ad, .companion-ads, .ima-container {
+              display: none !important;
+              visibility: hidden !important;
+              opacity: 0 !important;
+              pointer-events: none !important;
+              height: 0 !important;
+              width: 0 !important;
+              overflow: hidden !important;
+            }
+            .preroll-skip, .ad-skip-button, [class*="skip-ad"] {
+              display: none !important;
+            }
+          `;
+          iframeDoc.head.appendChild(style);
+
+          const ads = iframeDoc.querySelectorAll('.vidking-ads, .ad-container, [class*="ads"], [id*="ads"], .preroll-ad, .splash-ad');
+          ads.forEach(ad => {
+            ad.style.display = 'none';
+            ad.remove();
+          });
+        }
+      } catch (e) {
+        // Cross-origin restrictions prevent direct access
+      }
+    };
+
+    const interval = setInterval(blockAds, 1000);
+    iframe.addEventListener('load', blockAds);
+
+    return () => {
+      clearInterval(interval);
+      iframe.removeEventListener('load', blockAds);
+    };
+  }, []);
+
   const toggleWatchlist = async () => {
     const token = localStorage.getItem('token');
     if (!token || !currentProfile) return;
@@ -78,11 +119,6 @@ export default function Watch() {
     }
   };
 
-  const getVideoUrl = () => {
-    const source = FREE_STREAM_SOURCES[currentSource];
-    return `${source.baseUrl}${type}/${id}`;
-  };
-
   if (loading) {
     return <div className="loading-screen"><div className="spinner"></div></div>;
   }
@@ -95,26 +131,25 @@ export default function Watch() {
         </Link>
         
         <div className="watch-container">
-          <ReactPlayer
-            url={getVideoUrl()}
-            width="100%"
-            height="100%"
-            controls
-            playing
-            config={{
-              file: {
-                attributes: { controlsList: 'nodownload' }
-              }
+          <iframe
+            id="vidking-frame"
+            src={VIDKING_EMBED}
+            frameBorder="0"
+            allowFullScreen
+            allow="autoplay; fullscreen"
+            scrolling="no"
+            title="Video Player"
+            style={{
+              width: '100%',
+              height: '100%',
+              border: 'none',
+              background: '#000'
             }}
           />
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
-          <button 
-            onClick={() => setShowSources(!showSources)}
-            style={{ padding: '0.5rem 1rem', background: 'var(--surface)', border: '2px solid var(--border)', borderRadius: '8px', color: 'var(--text)', cursor: 'pointer' }}>
-            Change Source ({FREE_STREAM_SOURCES[currentSource].name})
-          </button>
+          <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Powered by Vidking</span>
           {inWatchlist ? (
             <button onClick={toggleWatchlist} style={{ padding: '0.5rem 1rem', background: 'var(--primary)', border: 'none', borderRadius: '8px', color: 'white', cursor: 'pointer' }}>
               ✓ In Watchlist
@@ -125,26 +160,6 @@ export default function Watch() {
             </button>
           )}
         </div>
-
-        {showSources && (
-          <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-            {FREE_STREAM_SOURCES.map((source, idx) => (
-              <button
-                key={source.name}
-                onClick={() => { setCurrentSource(idx); setShowSources(false); }}
-                style={{
-                  padding: '0.5rem 1rem',
-                  background: idx === currentSource ? 'var(--primary)' : 'var(--surface)',
-                  border: '2px solid var(--border)',
-                  borderRadius: '8px',
-                  color: 'white',
-                  cursor: 'pointer'
-                }}>
-                {source.name}
-              </button>
-            ))}
-          </div>
-        )}
 
         {media && (
           <div className="watch-info">
