@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import ReactPlayer from 'react-player';
 import { useProfile } from '../context/ProfileContext';
 
@@ -13,21 +13,14 @@ const FREE_STREAM_SOURCES = [
 
 export default function Watch() {
   const { type, id } = useParams();
-  const navigate = useNavigate();
   const { currentProfile } = useProfile();
   const [media, setMedia] = useState(null);
   const [loading, setLoading] = useState(true);
   const [inWatchlist, setInWatchlist] = useState(false);
   const [currentSource, setCurrentSource] = useState(0);
-  const [videoUrl, setVideoUrl] = useState('');
   const [showSources, setShowSources] = useState(false);
 
-  useEffect(() => {
-    loadMedia();
-    fetchWatchlist();
-  }, [type, id]);
-
-  const loadMedia = async () => {
+  const loadMedia = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(`/api/${type}/${id}`);
@@ -38,9 +31,9 @@ export default function Watch() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [type, id]);
 
-  const fetchWatchlist = async () => {
+  const fetchWatchlist = useCallback(async () => {
     if (!currentProfile) return;
     const token = localStorage.getItem('token');
     try {
@@ -52,7 +45,12 @@ export default function Watch() {
     } catch (err) {
       console.error('Error fetching watchlist:', err);
     }
-  };
+  }, [currentProfile, id]);
+
+  useEffect(() => {
+    loadMedia();
+    fetchWatchlist();
+  }, [loadMedia, fetchWatchlist]);
 
   const toggleWatchlist = async () => {
     const token = localStorage.getItem('token');

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useProfile } from '../context/ProfileContext';
@@ -39,7 +39,6 @@ export default function Home() {
   const [content, setContent] = useState([]);
   const [loading, setLoading] = useState(true);
   const [hero, setHero] = useState(null);
-  const [selectedMedia, setSelectedMedia] = useState(null);
   const [genre, setGenre] = useState('');
   const [source, setSource] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -47,11 +46,7 @@ export default function Home() {
   const { currentProfile } = useProfile();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    loadContent();
-  }, [genre, source]);
-
-  const loadContent = async () => {
+  const loadContent = useCallback(async () => {
     setLoading(true);
     try {
       let url = '/api/trending';
@@ -72,7 +67,11 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [genre, source, hero]);
+
+  useEffect(() => {
+    loadContent();
+  }, [loadContent]);
 
   const handleSearch = (e) => {
     e.preventDefault();

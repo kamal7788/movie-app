@@ -9,7 +9,7 @@ export function useProfile() {
 
 export function ProfileProvider({ children }) {
   const [currentProfile, setCurrentProfile] = useState(null);
-  const { user, profiles } = useAuth();
+  const { profiles } = useAuth();
 
   useEffect(() => {
     const saved = localStorage.getItem('currentProfile');

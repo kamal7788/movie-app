@@ -7,8 +7,8 @@ const AVATARS = ['🦊', '🐼', '🦁', '🐯', '🦄', '🐲', '🦅', '🐬']
 const COLORS = ['#e50914', '#1f1f1f', '#4a90d9', '#2ecc71', '#9b59b6', '#f39c12', '#e74c3c', '#16a085'];
 
 export default function Profiles() {
-  const { user, profiles, logout, addProfile, deleteProfile } = useAuth();
-  const { currentProfile, selectProfile } = useProfile();
+  const { profiles, logout, addProfile } = useAuth();
+  const { selectProfile } = useProfile();
   const navigate = useNavigate();
   const [showAddForm, setShowAddForm] = useState(false);
   const [newProfile, setNewProfile] = useState({ name: '', avatar: AVATARS[0], color: COLORS[0] });
