@@ -89,7 +89,7 @@ function proxyRequest(apiUrl, res) {
   });
 }
 
-const clientBuildPath = path.join(__dirname, 'client', 'build');
+const clientBuildPath = path.join(__dirname, '..', 'client', 'build');
 const fs = require('fs');
 if (fs.existsSync(clientBuildPath)) {
   app.use(express.static(clientBuildPath));
