@@ -25,23 +25,14 @@ const GENRES = [
   { id: '10752', name: 'War' }
 ];
 
-const SOURCES = [
-  { id: '', name: 'All Sources' },
-  { id: 'netflix', name: 'Netflix' },
-  { id: 'disney+', name: 'Disney+' },
-  { id: 'hbo', name: 'HBO' },
-  { id: 'hulu', name: 'Hulu' },
-  { id: 'amazon', name: 'Prime Video' },
-  { id: 'apple-tv', name: 'Apple TV+' }
-];
-
 export default function Home() {
-  const [content, setContent] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [movies, setMovies] = useState([]);
+  const [tvShows, setTvShows] = useState([]);
   const [hero, setHero] = useState(null);
   const [genre, setGenre] = useState('');
-  const [source, setSource] = useState('');
+  const [filterType, setFilterType] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
   const { logout } = useAuth();
   const { currentProfile } = useProfile();
   const navigate = useNavigate();
@@ -49,25 +40,27 @@ export default function Home() {
   const loadContent = useCallback(async () => {
     setLoading(true);
     try {
-      let url = '/api/trending';
-      if (genre || source) {
-        url = `/api/discover?sort_by=popularity.desc${genre ? `&genre=${genre}` : ''}${source ? `&source=${source}` : ''}`;
-      }
-      const res = await fetch(url);
-      const data = await res.json();
-      if (data.results) {
-        const filtered = data.results.filter(r => (r.media_type === 'movie' || r.media_type === 'tv') && r.poster_path);
-        setContent(filtered);
-        if (filtered.length > 0 && !hero) {
-          setHero(filtered[0]);
-        }
+      const [moviesRes, tvRes] = await Promise.all([
+        fetch('/api/trending/movies'),
+        fetch('/api/trending/tv')
+      ]);
+      const moviesData = await moviesRes.json();
+      const tvData = await tvRes.json();
+      
+      setMovies(moviesData.results || []);
+      setTvShows(tvData.results || []);
+      
+      const allContent = [...(moviesData.results || []), ...(tvData.results || [])];
+      if (allContent.length > 0 && !hero) {
+        const randomIndex = Math.floor(Math.random() * Math.min(allContent.length, 10));
+        setHero(allContent[randomIndex]);
       }
     } catch (err) {
       console.error('Error loading content:', err);
     } finally {
       setLoading(false);
     }
-  }, [genre, source, hero]);
+  }, [hero]);
 
   useEffect(() => {
     loadContent();
@@ -81,9 +74,33 @@ export default function Home() {
   };
 
   const handleMediaClick = (media) => {
-    const type = media.media_type === 'tv' ? 'tv' : 'movie';
+    const type = media.title ? 'movie' : 'tv';
     navigate(`/watch/${type}/${media.id}`);
   };
+
+  const handleGenreFilter = async (genreId) => {
+    setGenre(genreId);
+    setLoading(true);
+    try {
+      if (filterType === 'movies' || filterType === 'all') {
+        const res = await fetch(`/api/discover/movies?genre=${genreId}`);
+        const data = await res.json();
+        setMovies(data.results || []);
+      }
+      if (filterType === 'tv' || filterType === 'all') {
+        const res = await fetch(`/api/discover/tv?genre=${genreId}`);
+        const data = await res.json();
+        setTvShows(data.results || []);
+      }
+    } catch (err) {
+      console.error('Error filtering:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredMovies = movies.filter(m => m.poster_path);
+  const filteredTvShows = tvShows.filter(t => t.poster_path);
 
   return (
     <div>
@@ -116,7 +133,7 @@ export default function Home() {
           <div className="container hero-content">
             <h1 className="hero-title">{hero.title || hero.name}</h1>
             <div className="hero-meta">
-              <span>{hero.media_type === 'tv' ? 'TV Series' : 'Movie'}</span>
+              <span>{hero.name ? 'TV Series' : 'Movie'}</span>
               <span>{(hero.release_date || hero.first_air_date || '').split('-')[0]}</span>
               <span className="rating">★ {hero.vote_average?.toFixed(1)}</span>
             </div>
@@ -137,38 +154,61 @@ export default function Home() {
             <input type="text" className="search-input" placeholder="Search movies, TV shows..." 
               value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
           </form>
-          <select value={genre} onChange={(e) => setGenre(e.target.value)}>
+          <select value={genre} onChange={(e) => handleGenreFilter(e.target.value)}>
             {GENRES.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
           </select>
-          <select value={source} onChange={(e) => setSource(e.target.value)}>
-            {SOURCES.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+          <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
+            <option value="all">Movies & TV</option>
+            <option value="movies">Movies Only</option>
+            <option value="tv">TV Shows Only</option>
           </select>
         </div>
 
-        <section className="section">
-          <h2 className="section-title">
-            {genre ? GENRES.find(g => g.id === genre)?.name : 'Trending'}
-            {source ? ` on ${SOURCES.find(s => s.id === source)?.name}` : ''}
-          </h2>
-          {loading ? (
-            <div className="empty-state"><div className="spinner"></div></div>
-          ) : (
-            <div className="grid">
-              {content.map(media => (
-                <div key={media.id} className="card" onClick={() => handleMediaClick(media)}>
-                  <img className="card-poster" src={`${TMDB_IMAGE_BASE}${media.poster_path}`} alt={media.title || media.name} loading="lazy" />
-                  <div className="card-overlay"></div>
-                  <span className="card-badge">★ {media.vote_average?.toFixed(1)}</span>
-                  <span className="card-type">{media.media_type === 'tv' ? 'TV' : 'Movie'}</span>
-                  <div className="card-info">
-                    <div className="card-title">{media.title || media.name}</div>
-                    <div className="card-year">{(media.release_date || media.first_air_date || '').split('-')[0]}</div>
-                  </div>
+        {loading ? (
+          <div className="empty-state"><div className="spinner"></div></div>
+        ) : (
+          <>
+            {(filterType === 'all' || filterType === 'movies') && filteredMovies.length > 0 && (
+              <section className="section">
+                <h2 className="section-title">Movies</h2>
+                <div className="grid">
+                  {filteredMovies.slice(0, 20).map(media => (
+                    <div key={`movie-${media.id}`} className="card" onClick={() => handleMediaClick(media)}>
+                      <img className="card-poster" src={`${TMDB_IMAGE_BASE}${media.poster_path}`} alt={media.title} loading="lazy" />
+                      <div className="card-overlay"></div>
+                      <span className="card-badge">★ {media.vote_average?.toFixed(1)}</span>
+                      <span className="card-type">Movie</span>
+                      <div className="card-info">
+                        <div className="card-title">{media.title}</div>
+                        <div className="card-year">{(media.release_date || '').split('-')[0]}</div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
-        </section>
+              </section>
+            )}
+
+            {(filterType === 'all' || filterType === 'tv') && filteredTvShows.length > 0 && (
+              <section className="section">
+                <h2 className="section-title">TV Shows</h2>
+                <div className="grid">
+                  {filteredTvShows.slice(0, 20).map(media => (
+                    <div key={`tv-${media.id}`} className="card" onClick={() => handleMediaClick(media)}>
+                      <img className="card-poster" src={`${TMDB_IMAGE_BASE}${media.poster_path}`} alt={media.name} loading="lazy" />
+                      <div className="card-overlay"></div>
+                      <span className="card-badge">★ {media.vote_average?.toFixed(1)}</span>
+                      <span className="card-type">TV</span>
+                      <div className="card-info">
+                        <div className="card-title">{media.name}</div>
+                        <div className="card-year">{(media.first_air_date || '').split('-')[0]}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+          </>
+        )}
       </main>
 
       <footer>

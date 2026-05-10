@@ -4,6 +4,7 @@ const cors = require('cors');
 const path = require('path');
 const https = require('https');
 
+const { initializeDatabase } = require('./db');
 const authRoutes = require('./routes/auth');
 const profileRoutes = require('./routes/profiles');
 const watchlistRoutes = require('./routes/watchlist');
@@ -20,11 +21,27 @@ app.use('/api/watchlist', watchlistRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
-app.get('/api/trending', (req, res) => {
+app.get('/api/trending/all', (req, res) => {
   if (!process.env.TMDB_API_KEY) {
     return res.status(500).json({ error: 'TMDB_API_KEY not configured' });
   }
   const url = `https://api.themoviedb.org/3/trending/all/week?language=en-US&api_key=${process.env.TMDB_API_KEY}`;
+  proxyRequest(url, res);
+});
+
+app.get('/api/trending/movies', (req, res) => {
+  if (!process.env.TMDB_API_KEY) {
+    return res.status(500).json({ error: 'TMDB_API_KEY not configured' });
+  }
+  const url = `https://api.themoviedb.org/3/trending/movie/week?language=en-US&api_key=${process.env.TMDB_API_KEY}`;
+  proxyRequest(url, res);
+});
+
+app.get('/api/trending/tv', (req, res) => {
+  if (!process.env.TMDB_API_KEY) {
+    return res.status(500).json({ error: 'TMDB_API_KEY not configured' });
+  }
+  const url = `https://api.themoviedb.org/3/trending/tv/week?language=en-US&api_key=${process.env.TMDB_API_KEY}`;
   proxyRequest(url, res);
 });
 
@@ -53,17 +70,23 @@ app.get('/api/tv/:id', (req, res) => {
   proxyRequest(url, res);
 });
 
-app.get('/api/discover', (req, res) => {
+app.get('/api/discover/movies', (req, res) => {
   if (!process.env.TMDB_API_KEY) {
     return res.status(500).json({ error: 'TMDB_API_KEY not configured' });
   }
-  const { genre, source, sort_by } = req.query;
+  const { genre, sort_by } = req.query;
   let url = `https://api.themoviedb.org/3/discover/movie?api_key=${process.env.TMDB_API_KEY}&language=en-US&sort_by=${sort_by || 'popularity.desc'}`;
   if (genre) url += `&with_genres=${genre}`;
-  if (source) {
-    const networks = { 'netflix': 213, 'disney+': 337, 'hbo': 49, 'hulu': 453, 'amazon': 1024, 'apple-tv': 2552 };
-    if (networks[source]) url += `&with_networks=${networks[source]}`;
+  proxyRequest(url, res);
+});
+
+app.get('/api/discover/tv', (req, res) => {
+  if (!process.env.TMDB_API_KEY) {
+    return res.status(500).json({ error: 'TMDB_API_KEY not configured' });
   }
+  const { genre, sort_by } = req.query;
+  let url = `https://api.themoviedb.org/3/discover/tv?api_key=${process.env.TMDB_API_KEY}&language=en-US&sort_by=${sort_by || 'popularity.desc'}`;
+  if (genre) url += `&with_genres=${genre}`;
   proxyRequest(url, res);
 });
 
@@ -72,6 +95,14 @@ app.get('/api/genres', (req, res) => {
     return res.status(500).json({ error: 'TMDB_API_KEY not configured' });
   }
   const url = `https://api.themoviedb.org/3/genre/movie/list?api_key=${process.env.TMDB_API_KEY}&language=en-US`;
+  proxyRequest(url, res);
+});
+
+app.get('/api/tv/genres', (req, res) => {
+  if (!process.env.TMDB_API_KEY) {
+    return res.status(500).json({ error: 'TMDB_API_KEY not configured' });
+  }
+  const url = `https://api.themoviedb.org/3/genre/tv/list?api_key=${process.env.TMDB_API_KEY}&language=en-US`;
   proxyRequest(url, res);
 });
 
@@ -98,4 +129,16 @@ if (fs.existsSync(clientBuildPath)) {
   });
 }
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+const startServer = async () => {
+  try {
+    await initializeDatabase();
+    console.log('Database connected and initialized');
+  } catch (error) {
+    console.error('Failed to initialize database:', error.message);
+    console.log('Server will continue without database initialization');
+  }
+  
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+};
+
+startServer();

@@ -1,26 +1,29 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
-const low = require('lowdb');
-const FileSync = require('lowdb/adapters/FileSync');
+const { v4: uuidv4 } = require('uuid');
+const { pool } = require('../db');
 
-const adapter = new FileSync('db.json');
-const db = low(adapter);
-
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'No token' });
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
-    const watchlist = db.get('watchlist').filter({ userId: decoded.userId, profileId: req.query.profileId }).value();
+    const { profileId } = req.query;
+    let watchlist;
+    if (profileId) {
+      [watchlist] = await pool.query('SELECT * FROM watchlist WHERE user_id = ? AND profile_id = ? ORDER BY added_at DESC', [decoded.userId, profileId]);
+    } else {
+      [watchlist] = await pool.query('SELECT * FROM watchlist WHERE user_id = ? ORDER BY added_at DESC', [decoded.userId]);
+    }
     res.json({ watchlist });
   } catch (err) {
     res.status(401).json({ error: 'Invalid token' });
   }
 });
 
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'No token' });
 
@@ -28,43 +31,41 @@ router.post('/', (req, res) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
     const { profileId, mediaId, mediaType, title, poster, progress, completed } = req.body;
 
-    const existing = db.get('watchlist').find({ userId: decoded.userId, profileId, mediaId }).value();
-    if (existing) {
-      db.get('watchlist').find({ userId: decoded.userId, profileId, mediaId })
-        .assign({ progress, completed, updatedAt: new Date() })
-        .write();
-      return res.json({ item: db.get('watchlist').find({ userId: decoded.userId, profileId, mediaId }).value() });
+    const [existing] = await pool.query('SELECT * FROM watchlist WHERE user_id = ? AND profile_id = ? AND media_id = ?', [decoded.userId, profileId, mediaId]);
+    
+    if (existing.length > 0) {
+      await pool.query('UPDATE watchlist SET progress = ?, completed = ? WHERE id = ?', [
+        progress || existing[0].progress, completed ? 1 : 0, existing[0].id
+      ]);
+      const [updated] = await pool.query('SELECT * FROM watchlist WHERE id = ?', [existing[0].id]);
+      return res.json({ item: updated[0] });
     }
 
-    const item = {
-      id: require('uuid').v4(),
-      userId: decoded.userId,
-      profileId,
-      mediaId,
-      mediaType,
-      title,
-      poster,
-      progress: progress || 0,
-      completed: completed || false,
-      addedAt: new Date(),
-      updatedAt: new Date()
-    };
+    const id = uuidv4();
+    await pool.query('INSERT INTO watchlist (id, user_id, profile_id, media_id, media_type, title, poster, progress, completed) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+      id, decoded.userId, profileId, mediaId, mediaType, title, poster, progress || 0, completed ? 1 : 0
+    ]);
 
-    db.get('watchlist').push(item).write();
-    res.json({ item });
+    const [item] = await pool.query('SELECT * FROM watchlist WHERE id = ?', [id]);
+    res.json({ item: item[0] });
   } catch (err) {
+    console.error('Watchlist error:', err);
     res.status(401).json({ error: 'Invalid token' });
   }
 });
 
-router.delete('/:mediaId', (req, res) => {
+router.delete('/:mediaId', async (req, res) => {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'No token' });
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
     const { profileId } = req.query;
-    db.get('watchlist').remove({ userId: decoded.userId, profileId, mediaId: req.params.mediaId }).write();
+    if (profileId) {
+      await pool.query('DELETE FROM watchlist WHERE user_id = ? AND profile_id = ? AND media_id = ?', [decoded.userId, profileId, req.params.mediaId]);
+    } else {
+      await pool.query('DELETE FROM watchlist WHERE user_id = ? AND media_id = ?', [decoded.userId, req.params.mediaId]);
+    }
     res.json({ success: true });
   } catch (err) {
     res.status(401).json({ error: 'Invalid token' });

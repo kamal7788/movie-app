@@ -2,26 +2,22 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
-const low = require('lowdb');
-const FileSync = require('lowdb/adapters/FileSync');
+const { pool } = require('../db');
 
-const adapter = new FileSync('db.json');
-const db = low(adapter);
-
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'No token' });
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
-    const profiles = db.get('profiles').filter({ userId: decoded.userId }).value();
+    const [profiles] = await pool.query('SELECT * FROM profiles WHERE user_id = ?', [decoded.userId]);
     res.json({ profiles });
   } catch (err) {
     res.status(401).json({ error: 'Invalid token' });
   }
 });
 
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'No token' });
 
@@ -29,26 +25,22 @@ router.post('/', (req, res) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
     const { name, avatar, color } = req.body;
     
-    const profiles = db.get('profiles').filter({ userId: decoded.userId }).value();
+    const [profiles] = await pool.query('SELECT * FROM profiles WHERE user_id = ?', [decoded.userId]);
     if (profiles.length >= 5) return res.status(400).json({ error: 'Max 5 profiles allowed' });
 
-    const profile = {
-      id: uuidv4(),
-      userId: decoded.userId,
-      name: name || 'New Profile',
-      avatar: avatar || 'default',
-      color: color || '#e50914',
-      createdAt: new Date()
-    };
+    const id = uuidv4();
+    await pool.query('INSERT INTO profiles (id, user_id, name, avatar, color) VALUES (?, ?, ?, ?, ?)', [
+      id, decoded.userId, name || 'New Profile', avatar || 'default', color || '#e50914'
+    ]);
 
-    db.get('profiles').push(profile).write();
-    res.json({ profile });
+    const [newProfile] = await pool.query('SELECT * FROM profiles WHERE id = ?', [id]);
+    res.json({ profile: newProfile[0] });
   } catch (err) {
     res.status(401).json({ error: 'Invalid token' });
   }
 });
 
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'No token' });
 
@@ -56,26 +48,27 @@ router.put('/:id', (req, res) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
     const { name, avatar, color } = req.body;
     
-    const profile = db.get('profiles').find({ id: req.params.id, userId: decoded.userId }).value();
-    if (!profile) return res.status(404).json({ error: 'Profile not found' });
+    const [profiles] = await pool.query('SELECT * FROM profiles WHERE id = ? AND user_id = ?', [req.params.id, decoded.userId]);
+    if (profiles.length === 0) return res.status(404).json({ error: 'Profile not found' });
 
-    db.get('profiles').find({ id: req.params.id })
-      .assign({ name: name || profile.name, avatar: avatar || profile.avatar, color: color || profile.color })
-      .write();
+    await pool.query('UPDATE profiles SET name = ?, avatar = ?, color = ? WHERE id = ?', [
+      name || profiles[0].name, avatar || profiles[0].avatar, color || profiles[0].color, req.params.id
+    ]);
 
-    res.json({ profile: db.get('profiles').find({ id: req.params.id }).value() });
+    const [updated] = await pool.query('SELECT * FROM profiles WHERE id = ?', [req.params.id]);
+    res.json({ profile: updated[0] });
   } catch (err) {
     res.status(401).json({ error: 'Invalid token' });
   }
 });
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'No token' });
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
-    db.get('profiles').remove({ id: req.params.id, userId: decoded.userId }).write();
+    await pool.query('DELETE FROM profiles WHERE id = ? AND user_id = ?', [req.params.id, decoded.userId]);
     res.json({ success: true });
   } catch (err) {
     res.status(401).json({ error: 'Invalid token' });
