@@ -10,7 +10,6 @@ export default function Watch() {
   const [media, setMedia] = useState(null);
   const [loading, setLoading] = useState(true);
   const [inWatchlist, setInWatchlist] = useState(false);
-  const [showSources, setShowSources] = useState(false);
 
   const VIDKING_EMBED = `https://www.vidking.net/embed/${type}/${id}`;
 
