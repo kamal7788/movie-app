@@ -16,10 +16,7 @@ export default function Watch() {
   const [loading, setLoading] = useState(true);
   const [inWatchlist, setInWatchlist] = useState(false);
   const [currentSource, setCurrentSource] = useState(SOURCES[0]);
-  const [showControls, setShowControls] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const containerRef = useRef(null);
-  const hideTimerRef = useRef(null);
 
   const loadMedia = useCallback(async () => {
     try {
@@ -58,29 +55,8 @@ export default function Watch() {
     return () => document.removeEventListener('fullscreenchange', handler);
   }, []);
 
-  const resetHideTimer = useCallback(() => {
-    setShowControls(true);
-    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
-    hideTimerRef.current = setTimeout(() => setShowControls(false), 5000);
-  }, []);
-
-  useEffect(() => {
-    resetHideTimer();
-    return () => { if (hideTimerRef.current) clearTimeout(hideTimerRef.current); };
-  }, [currentSource, resetHideTimer]);
-
-  const toggleControls = () => {
-    if (showControls) {
-      setShowControls(false);
-      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
-    } else {
-      setShowControls(true);
-      resetHideTimer();
-    }
-  };
-
   const toggleFullscreen = async () => {
-    const el = containerRef.current;
+    const el = document.querySelector('.watch-container');
     if (!el) return;
     if (document.fullscreenElement) {
       await document.exitFullscreen();
@@ -141,13 +117,7 @@ export default function Watch() {
           </div>
         </div>
 
-        <div
-          ref={containerRef}
-          className="watch-container"
-          style={{ position: 'relative', background: '#000' }}
-          onClick={toggleControls}
-          tabIndex={-1}
-        >
+        <div className="watch-container" style={{ position: 'relative', background: '#000' }}>
           <iframe
             id="video-frame"
             src={currentSource.url(type, id)}
@@ -156,41 +126,39 @@ export default function Watch() {
             allow="autoplay; fullscreen; encrypted-media"
             scrolling="no"
             title="Video Player"
-            style={{ width: '100%', height: '100%', border: 'none', background: '#000', pointerEvents: showControls ? 'none' : 'auto' }}
+            style={{ width: '100%', height: '100%', border: 'none', background: '#000' }}
           />
 
           <div
             style={{
-              position: 'absolute', bottom: '2rem', left: '50%', transform: 'translateX(-50%)',
-              display: 'flex', gap: '1rem', alignItems: 'center',
-              background: 'rgba(0,0,0,0.7)', padding: '0.75rem 1.25rem', borderRadius: '50px',
-              backdropFilter: 'blur(8px)',
-              opacity: showControls ? 1 : 0,
-              transition: 'opacity 0.3s ease',
-              pointerEvents: showControls ? 'auto' : 'none'
+              position: 'absolute', bottom: 0, left: 0, right: 0,
+              display: 'flex', alignItems: 'center', gap: '0.75rem',
+              background: 'linear-gradient(transparent, rgba(0,0,0,0.85))',
+              padding: '2.5rem 1.25rem 0.75rem',
+              pointerEvents: 'auto'
             }}
             role="toolbar"
             aria-label="TV Controls"
           >
             <button
-              onClick={(e) => { e.stopPropagation(); const iframe = document.getElementById('video-frame'); if (iframe) iframe.contentWindow?.focus(); }}
+              onClick={() => { const iframe = document.getElementById('video-frame'); if (iframe) iframe.contentWindow?.focus(); }}
               onKeyDown={(e) => { if (e.key === 'Enter') { document.getElementById('video-frame')?.contentWindow?.focus(); e.preventDefault(); } }}
               tabIndex={0}
               style={{
-                padding: '0.5rem 1rem', background: 'transparent', border: 'none',
-                color: 'white', cursor: 'pointer', fontSize: '0.9rem', whiteSpace: 'nowrap'
+                padding: '0.5rem 1rem', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: '6px', color: 'white', cursor: 'pointer', fontSize: '0.85rem'
               }}
             >
               ▶ Play
             </button>
 
             <button
-              onClick={(e) => { e.stopPropagation(); toggleFullscreen(); }}
+              onClick={toggleFullscreen}
               onKeyDown={(e) => { if (e.key === 'Enter') { toggleFullscreen(); e.preventDefault(); } }}
               tabIndex={0}
               style={{
-                padding: '0.5rem 1rem', background: 'transparent', border: 'none',
-                color: 'white', cursor: 'pointer', fontSize: '0.9rem', whiteSpace: 'nowrap'
+                padding: '0.5rem 1rem', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: '6px', color: 'white', cursor: 'pointer', fontSize: '0.85rem'
               }}
             >
               {isFullscreen ? '⛶ Exit' : '⛶ Fullscreen'}
