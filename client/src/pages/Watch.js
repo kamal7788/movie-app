@@ -69,6 +69,16 @@ export default function Watch() {
     return () => { if (hideTimerRef.current) clearTimeout(hideTimerRef.current); };
   }, [currentSource, resetHideTimer]);
 
+  const toggleControls = () => {
+    if (showControls) {
+      setShowControls(false);
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    } else {
+      setShowControls(true);
+      resetHideTimer();
+    }
+  };
+
   const toggleFullscreen = async () => {
     const el = containerRef.current;
     if (!el) return;
@@ -135,38 +145,35 @@ export default function Watch() {
           ref={containerRef}
           className="watch-container"
           style={{ position: 'relative', background: '#000' }}
-          onMouseMove={resetHideTimer}
+          onClick={toggleControls}
           tabIndex={-1}
         >
           <iframe
+            id="video-frame"
             src={currentSource.url(type, id)}
             frameBorder="0"
             allowFullScreen
             allow="autoplay; fullscreen; encrypted-media"
             scrolling="no"
             title="Video Player"
-            style={{ width: '100%', height: '100%', border: 'none', background: '#000' }}
+            style={{ width: '100%', height: '100%', border: 'none', background: '#000', pointerEvents: showControls ? 'none' : 'auto' }}
           />
 
           <div
             style={{
               position: 'absolute', bottom: '2rem', left: '50%', transform: 'translateX(-50%)',
               display: 'flex', gap: '1rem', alignItems: 'center',
-              background: 'rgba(0,0,0,0.6)', padding: '0.75rem 1.25rem', borderRadius: '50px',
+              background: 'rgba(0,0,0,0.7)', padding: '0.75rem 1.25rem', borderRadius: '50px',
               backdropFilter: 'blur(8px)',
               opacity: showControls ? 1 : 0,
               transition: 'opacity 0.3s ease',
               pointerEvents: showControls ? 'auto' : 'none'
             }}
-            onMouseMove={resetHideTimer}
             role="toolbar"
             aria-label="TV Controls"
           >
             <button
-              onClick={() => {
-                const iframe = document.getElementById('video-frame');
-                if (iframe) iframe.contentWindow?.focus();
-              }}
+              onClick={(e) => { e.stopPropagation(); const iframe = document.getElementById('video-frame'); if (iframe) iframe.contentWindow?.focus(); }}
               onKeyDown={(e) => { if (e.key === 'Enter') { document.getElementById('video-frame')?.contentWindow?.focus(); e.preventDefault(); } }}
               tabIndex={0}
               style={{
@@ -178,7 +185,7 @@ export default function Watch() {
             </button>
 
             <button
-              onClick={toggleFullscreen}
+              onClick={(e) => { e.stopPropagation(); toggleFullscreen(); }}
               onKeyDown={(e) => { if (e.key === 'Enter') { toggleFullscreen(); e.preventDefault(); } }}
               tabIndex={0}
               style={{
@@ -186,7 +193,7 @@ export default function Watch() {
                 color: 'white', cursor: 'pointer', fontSize: '0.9rem', whiteSpace: 'nowrap'
               }}
             >
-              {isFullscreen ? '⛶ Exit Fullscreen' : '⛶ Fullscreen'}
+              {isFullscreen ? '⛶ Exit' : '⛶ Fullscreen'}
             </button>
           </div>
         </div>
