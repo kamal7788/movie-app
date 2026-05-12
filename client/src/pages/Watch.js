@@ -142,10 +142,9 @@ export default function Watch() {
             src={currentSource.url(type, id)}
             frameBorder="0"
             allowFullScreen
-            allow="autoplay; fullscreen"
+            allow="autoplay; fullscreen; encrypted-media"
             scrolling="no"
             title="Video Player"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-fullscreen"
             style={{ width: '100%', height: '100%', border: 'none', background: '#000' }}
           />
 
