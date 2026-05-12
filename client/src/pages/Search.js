@@ -89,7 +89,7 @@ export default function Search() {
           ) : (
             <div className="grid">
               {results.map(media => (
-                <div key={media.id} className="card" onClick={() => handleMediaClick(media)}>
+                <div key={media.id} className="card" onClick={() => handleMediaClick(media)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleMediaClick(media); }} tabIndex={0} role="button" aria-label={media.title || media.name}>
                   <img className="card-poster" src={`${TMDB_IMAGE_BASE}${media.poster_path}`} alt={media.title || media.name} loading="lazy" />
                   <div className="card-overlay"></div>
                   <span className="card-badge">★ {media.vote_average?.toFixed(1)}</span>

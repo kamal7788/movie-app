@@ -19,6 +19,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/profiles', profileRoutes);
 app.use('/api/watchlist', watchlistRoutes);
 
+const sourceRoutes = require('./routes/source');
+app.use('/api/source', sourceRoutes);
+
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
 app.get('/api/trending/all', (req, res) => {

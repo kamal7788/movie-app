@@ -30,7 +30,7 @@ export default function Profiles() {
       <h1>Who's Watching?</h1>
       <div className="profile-grid">
         {profiles.map(profile => (
-          <div key={profile.id} className="profile-card" onClick={() => handleSelect(profile)}>
+          <div key={profile.id} className="profile-card" onClick={() => handleSelect(profile)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleSelect(profile); }} tabIndex={0} role="button" aria-label={profile.name}>
             <div className="profile-avatar" style={{ background: profile.color }}>
               {profile.avatar}
             </div>
@@ -38,7 +38,7 @@ export default function Profiles() {
           </div>
         ))}
         {profiles.length < 5 && (
-          <div className="profile-card" onClick={() => setShowAddForm(true)}>
+          <div className="profile-card" onClick={() => setShowAddForm(true)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setShowAddForm(true); }} tabIndex={0} role="button" aria-label="Add Profile">
             <div className="profile-avatar profile-add">+</div>
             <span className="profile-name">Add Profile</span>
           </div>

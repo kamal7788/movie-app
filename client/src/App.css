@@ -10,6 +10,104 @@
   --text: #ffffff;
   --text-muted: #a0a0a0;
   --border: #333333;
+  --focus-color: #e50914;
+}
+
+/* Android TV focus styles */
+:focus-visible {
+  outline: 3px solid var(--focus-color) !important;
+  outline-offset: 3px !important;
+}
+
+/* Remove focus outline for mouse users */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Ensure TV focus works on cards */
+.card:focus-visible {
+  transform: scale(1.05) translateY(-8px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5), 0 0 30px rgba(229, 9, 20, 0.3);
+}
+
+.card:focus-visible .card-overlay,
+.card:focus-visible .card-info {
+  opacity: 1;
+}
+
+.card:focus-visible .card-info {
+  transform: translateY(0);
+}
+
+.card:focus-visible .profile-avatar {
+  border-color: var(--primary);
+}
+
+.btn:focus-visible {
+  background: var(--primary-glow);
+  transform: scale(1.02);
+}
+
+.profile-card:focus-visible {
+  transform: scale(1.1);
+  outline: 3px solid var(--focus-color);
+  outline-offset: 4px;
+  border-radius: 12px;
+}
+
+.profile-actions button:focus-visible {
+  border-color: var(--text);
+}
+
+.watch-actions button:focus-visible {
+  border-color: var(--primary);
+}
+
+.modal-close:focus-visible {
+  background: var(--primary);
+}
+
+.add-to-list:focus-visible {
+  background: var(--primary-glow);
+}
+
+.nav-links a:focus-visible {
+  color: var(--text);
+  outline: 2px solid var(--focus-color);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+.profile-btn:focus-visible {
+  outline: 3px solid var(--focus-color);
+  outline-offset: 3px;
+}
+
+.profile-dropdown button:focus-visible {
+  background: var(--surface-hover);
+}
+
+.search-input:focus-visible {
+  border-color: var(--primary);
+}
+
+.filter-bar select:focus-visible {
+  border-color: var(--primary);
+}
+
+/* Remove card hover on TV since focus handles it */
+@media (hover: none) {
+  .card:hover {
+    transform: none;
+    box-shadow: none;
+  }
+  .card:hover .card-overlay,
+  .card:hover .card-info {
+    opacity: 0;
+  }
+  .card:hover .card-info {
+    transform: translateY(100%);
+  }
 }
 
 body {

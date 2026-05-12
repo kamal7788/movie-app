@@ -115,13 +115,13 @@ export default function Home() {
             </nav>
             {currentProfile && (
               <div className="profile-menu">
-                <button className="profile-btn" style={{ background: currentProfile.color }}>
+                <button className="profile-btn" style={{ background: currentProfile.color }} tabIndex={0}>
                   {currentProfile.avatar}
                 </button>
                 <div className="profile-dropdown">
-                  <button onClick={() => navigate('/profiles')}>Switch Profile</button>
-                  <button onClick={() => navigate('/settings')}>Settings</button>
-                  <button onClick={logout}>Sign Out</button>
+                  <button onClick={() => navigate('/profiles')} tabIndex={0}>Switch Profile</button>
+                  <button onClick={() => navigate('/settings')} tabIndex={0}>Settings</button>
+                  <button onClick={logout} tabIndex={0}>Sign Out</button>
                 </div>
               </div>
             )}
@@ -139,7 +139,7 @@ export default function Home() {
               <span>{(hero.release_date || hero.first_air_date || '').split('-')[0]}</span>
               <span className="rating">★ {hero.vote_average?.toFixed(1)}</span>
             </div>
-            <button className="btn" style={{ marginTop: '1rem', maxWidth: '200px' }} onClick={() => handleMediaClick(hero)}>
+            <button className="btn" style={{ marginTop: '1rem', maxWidth: '200px' }} onClick={() => handleMediaClick(hero)} tabIndex={0}>
               ▶ Play
             </button>
           </div>
@@ -175,7 +175,7 @@ export default function Home() {
                 <h2 className="section-title">Movies</h2>
                 <div className="grid">
                   {filteredMovies.slice(0, 20).map(media => (
-                    <div key={`movie-${media.id}`} className="card" onClick={() => handleMediaClick(media)}>
+                    <div key={`movie-${media.id}`} className="card" onClick={() => handleMediaClick(media)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleMediaClick(media); }} tabIndex={0} role="button" aria-label={media.title}>
                       <img className="card-poster" src={`${TMDB_IMAGE_BASE}${media.poster_path}`} alt={media.title} loading="lazy" />
                       <div className="card-overlay"></div>
                       <span className="card-badge">★ {media.vote_average?.toFixed(1)}</span>
@@ -195,7 +195,7 @@ export default function Home() {
                 <h2 className="section-title">TV Shows</h2>
                 <div className="grid">
                   {filteredTvShows.slice(0, 20).map(media => (
-                    <div key={`tv-${media.id}`} className="card" onClick={() => handleMediaClick(media)}>
+                    <div key={`tv-${media.id}`} className="card" onClick={() => handleMediaClick(media)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleMediaClick(media); }} tabIndex={0} role="button" aria-label={media.name}>
                       <img className="card-poster" src={`${TMDB_IMAGE_BASE}${media.poster_path}`} alt={media.name} loading="lazy" />
                       <div className="card-overlay"></div>
                       <span className="card-badge">★ {media.vote_average?.toFixed(1)}</span>

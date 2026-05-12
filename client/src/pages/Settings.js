@@ -53,7 +53,8 @@ export default function Settings() {
             cursor: 'pointer',
             marginBottom: '2rem',
             fontSize: '1rem'
-          }}>
+          }}
+          tabIndex={0}>
           ← Back to Home
         </button>
 
