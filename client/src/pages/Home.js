@@ -108,6 +108,14 @@ export default function Home() {
         <div className="container">
           <div className="header-content">
             <Link to="/" className="logo">STREAM<span>FLIX</span></Link>
+            <form onSubmit={handleSearch} className="search-container" style={{ maxWidth: '280px' }}>
+              <svg className="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
+              </svg>
+              <input type="text" className="search-input" placeholder="Search..." 
+                value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} tabIndex={0} />
+            </form>
             <nav className="nav-links">
               <Link to="/">Home</Link>
               <Link to="/search">Search</Link>
@@ -148,21 +156,13 @@ export default function Home() {
 
       <main className="container">
         <div className="filter-bar">
-          <form onSubmit={handleSearch} className="search-container">
-            <svg className="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8"></circle>
-              <path d="m21 21-4.35-4.35"></path>
-            </svg>
-            <input type="text" className="search-input" placeholder="Search movies, TV shows..." 
-              value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
-          </form>
           <select value={genre} onChange={(e) => handleGenreFilter(e.target.value)}>
             {GENRES.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
           </select>
           <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
-            <option value="all">Movies & TV</option>
-            <option value="movies">Movies Only</option>
-            <option value="tv">TV Shows Only</option>
+            <option value="all">All</option>
+            <option value="movies">Movies</option>
+            <option value="tv">TV</option>
           </select>
         </div>
 
