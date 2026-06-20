@@ -126,7 +126,7 @@ a{color:var(--accent);text-decoration:none}
 .explore-tabs{display:flex;gap:4px;background:var(--bg2);border-radius:8px;padding:4px;flex-shrink:0}
 .explore-tab{padding:8px 18px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text2);transition:all .2s;border:none;background:none;white-space:nowrap}
 .explore-tab.active{background:var(--accent);color:#000;font-weight:600}
-.explore-filters{display:flex;gap:8px;flex-wrap:nowrap;align-items:center;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex:1;min-width:0}
+.explore-filters{display:flex;gap:8px;flex-wrap:nowrap;align-items:center;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex:1;min-width:0;position:relative}
 .explore-filters::-webkit-scrollbar{display:none}
 .filter-chip{display:flex;align-items:center;gap:6px;padding:7px 14px;background:var(--bg-card);border:1px solid #2a2a35;border-radius:20px;font-size:12px;color:var(--text2);cursor:pointer;transition:all .2s}
 .filter-chip:hover,.filter-chip.active{border-color:var(--accent);color:var(--accent)}
@@ -145,7 +145,7 @@ a{color:var(--accent);text-decoration:none}
 
 /* Filter dropdown */
 .filter-dropdown{position:relative;display:inline-block}
-.filter-menu{display:none;position:absolute;top:calc(100% + 4px);left:0;background:var(--bg2);border:1px solid #2a2a35;border-radius:8px;padding:6px 0;min-width:180px;max-height:280px;overflow-y:auto;z-index:50}
+.filter-menu{display:none;position:fixed;background:var(--bg2);border:1px solid #2a2a35;border-radius:8px;padding:6px 0;min-width:180px;max-height:280px;overflow-y:auto;z-index:100}
 .filter-menu.open{display:block}
 .filter-menu-item{padding:8px 14px;font-size:13px;cursor:pointer;transition:background .15s;color:var(--text2)}
 .filter-menu-item:hover{background:rgba(255,255,255,.06);color:var(--text)}
@@ -407,7 +407,7 @@ body.tv-mode .detail-title{font-size:24px}
 body.tv-mode .explore-bar{flex-wrap:nowrap;gap:8px;padding:8px 0}
 body.tv-mode .explore-tabs{flex-shrink:0}
 body.tv-mode .explore-tab{padding:6px 14px;font-size:12px}
-body.tv-mode .explore-filters{overflow-x:auto}
+body.tv-mode .explore-filters{overflow:visible}
 body.tv-mode .filter-chip{padding:5px 10px;font-size:11px;white-space:nowrap;flex-shrink:0}
 body.tv-mode .load-more button{padding:10px 24px;font-size:12px}
 body.tv-mode .episode-thumb{width:160px;height:90px}

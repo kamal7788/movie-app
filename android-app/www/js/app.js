@@ -348,7 +348,14 @@ function makeFilterDropdown(label, param, options) {
   chip.onclick = (e) => {
     e.stopPropagation();
     $$('.filter-menu').forEach(m => { if (m !== menu) m.classList.remove('open'); });
-    menu.classList.toggle('open');
+    if (menu.classList.contains('open')) {
+      menu.classList.remove('open');
+    } else {
+      const rect = chip.getBoundingClientRect();
+      menu.style.top = (rect.bottom + 4) + 'px';
+      menu.style.left = rect.left + 'px';
+      menu.classList.add('open');
+    }
   };
   wrap.appendChild(chip);
   wrap.appendChild(menu);
@@ -1103,10 +1110,6 @@ document.addEventListener('DOMContentLoaded', init);
     return Array.from(document.querySelectorAll('.mobile-nav-item'));
   }
 
-  function getFocusableItems(view) {
-    return Array.from(view.querySelectorAll('.card, .explore-tab, .mylist-tab, .filter-chip, .section-link, .btn, .load-more button'));
-  }
-
   function getActiveNavItem() {
     return document.querySelector('.mobile-nav-item.active');
   }
@@ -1117,22 +1120,74 @@ document.addEventListener('DOMContentLoaded', init);
     item.focus();
   }
 
-  function focusFirstCard(view) {
-    if (!view) return;
-    var items = getFocusableItems(view);
-    if (items.length) {
-      items[0].setAttribute('tabindex', '0');
-      items[0].focus();
+  function getSections() {
+    var view = document.querySelector('.view.active');
+    if (!view) return [];
+    var sections = [];
+    // Hero is first focusable section
+    var hero = view.querySelector('.hero-home');
+    if (hero) sections.push({ el: hero, cards: [] });
+    // All .section elements (trending, genre rows, etc.)
+    view.querySelectorAll('.section').forEach(function(sec) {
+      var cards = Array.from(sec.querySelectorAll('.card'));
+      if (cards.length) sections.push({ el: sec, cards: cards });
+    });
+    // Browse grid (explore/mylist views)
+    var grid = view.querySelector('.browse-grid, .mylist-grid');
+    if (grid) {
+      var gridCards = Array.from(grid.querySelectorAll('.card'));
+      if (gridCards.length && !sections.some(function(s) { return s.el === grid; })) {
+        sections.push({ el: grid, cards: gridCards });
+      }
     }
+    return sections;
+  }
+
+  function findSectionIndex(focused) {
+    var sections = getSections();
+    for (var i = 0; i < sections.length; i++) {
+      var s = sections[i];
+      if (s.el === focused) return i;
+      if (s.cards.indexOf(focused) !== -1) return i;
+    }
+    return -1;
+  }
+
+  function focusSectionFirstCard(sectionIndex) {
+    var sections = getSections();
+    if (sectionIndex < 0 || sectionIndex >= sections.length) return null;
+    var s = sections[sectionIndex];
+    if (s.cards.length) {
+      s.cards[0].setAttribute('tabindex', '0');
+      s.cards[0].focus();
+      return s.cards[0];
+    }
+    return null;
+  }
+
+  function focusSectionLastCard(sectionIndex) {
+    var sections = getSections();
+    if (sectionIndex < 0 || sectionIndex >= sections.length) return null;
+    var s = sections[sectionIndex];
+    if (s.cards.length) {
+      var last = s.cards[s.cards.length - 1];
+      last.setAttribute('tabindex', '0');
+      last.focus();
+      return last;
+    }
+    return null;
   }
 
   function initTvNav() {
-    // Make bottom nav items focusable
     getNavItems().forEach(function(el) { el.setAttribute('tabindex', '0'); });
-
-    // Auto-focus the first content card
     var view = document.querySelector('.view.active');
-    if (view) focusFirstCard(view);
+    if (view) {
+      var firstCard = view.querySelector('.card, .explore-tab, .mylist-tab, .filter-chip');
+      if (firstCard) {
+        firstCard.setAttribute('tabindex', '0');
+        firstCard.focus();
+      }
+    }
   }
 
   document.addEventListener('keydown', function(e) {
@@ -1148,21 +1203,22 @@ document.addEventListener('DOMContentLoaded', init);
     var isOnCard = f.classList.contains('card');
     var isOnTab = f.classList.contains('explore-tab') || f.classList.contains('mylist-tab');
     var isOnChip = f.classList.contains('filter-chip');
-    var isOnBtn = f.classList.contains('btn') || f.classList.contains('load-more-btn') || f.classList.contains('section-link');
 
     switch (e.keyCode) {
       case 37: // LEFT
         if (isOnNav) {
-          // Move to previous nav item
           var idx = navItems.indexOf(f);
           if (idx > 0) focusNavItem(navItems[idx - 1]);
         } else if (isOnCard) {
-          // In a row-scroll, scroll left
           var row = f.closest('.row-scroll');
           if (row) {
-            row.scrollBy({ left: -350, behavior: 'smooth' });
+            // In a horizontal row: scroll left or move to prev card
+            var cards = Array.from(row.querySelectorAll('.card'));
+            var ci = cards.indexOf(f);
+            if (ci > 0) { cards[ci - 1].setAttribute('tabindex', '0'); cards[ci - 1].focus(); }
+            else { row.scrollBy({ left: -350, behavior: 'smooth' }); }
           } else {
-            // In grid, move to previous card
+            // In a grid: move to prev card
             var grid = f.closest('.browse-grid, .mylist-grid');
             if (grid) {
               var cards = Array.from(grid.querySelectorAll('.card'));
@@ -1175,7 +1231,7 @@ document.addEventListener('DOMContentLoaded', init);
           var ti = tabs.indexOf(f);
           if (ti > 0) { tabs[ti - 1].setAttribute('tabindex', '0'); tabs[ti - 1].focus(); }
         } else if (isOnChip) {
-          var chips = Array.from(f.parentElement.querySelectorAll('.filter-chip'));
+          var chips = Array.from(document.querySelectorAll('.explore-filters .filter-chip'));
           var chi = chips.indexOf(f);
           if (chi > 0) { chips[chi - 1].setAttribute('tabindex', '0'); chips[chi - 1].focus(); }
         }
@@ -1189,7 +1245,10 @@ document.addEventListener('DOMContentLoaded', init);
         } else if (isOnCard) {
           var row = f.closest('.row-scroll');
           if (row) {
-            row.scrollBy({ left: 350, behavior: 'smooth' });
+            var cards = Array.from(row.querySelectorAll('.card'));
+            var ci = cards.indexOf(f);
+            if (ci < cards.length - 1) { cards[ci + 1].setAttribute('tabindex', '0'); cards[ci + 1].focus(); }
+            else { row.scrollBy({ left: 350, behavior: 'smooth' }); }
           } else {
             var grid = f.closest('.browse-grid, .mylist-grid');
             if (grid) {
@@ -1203,7 +1262,7 @@ document.addEventListener('DOMContentLoaded', init);
           var ti = tabs.indexOf(f);
           if (ti < tabs.length - 1) { tabs[ti + 1].setAttribute('tabindex', '0'); tabs[ti + 1].focus(); }
         } else if (isOnChip) {
-          var chips = Array.from(f.parentElement.querySelectorAll('.filter-chip'));
+          var chips = Array.from(document.querySelectorAll('.explore-filters .filter-chip'));
           var chi = chips.indexOf(f);
           if (chi < chips.length - 1) { chips[chi + 1].setAttribute('tabindex', '0'); chips[chi + 1].focus(); }
         }
@@ -1212,82 +1271,52 @@ document.addEventListener('DOMContentLoaded', init);
 
       case 38: // UP
         if (isOnNav) {
-          // From bottom nav, jump to content
-          if (activeView) focusFirstCard(activeView);
+          // From bottom nav → go to last section
+          var sections = getSections();
+          if (sections.length) focusSectionLastCard(sections.length - 1);
         } else if (isOnCard) {
-          var grid = f.closest('.browse-grid, .mylist-grid');
-          if (grid) {
-            var cards = Array.from(grid.querySelectorAll('.card'));
-            var ci = cards.indexOf(f);
-            var cardW = f.offsetWidth + 16;
-            var cols = Math.max(1, Math.floor(grid.offsetWidth / cardW));
-            var prev = ci - cols;
-            if (prev >= 0) { cards[prev].setAttribute('tabindex', '0'); cards[prev].focus(); }
-            else { activeView.scrollBy({ top: -250, behavior: 'smooth' }); }
+          var si = findSectionIndex(f);
+          var sections = getSections();
+          if (si > 0) {
+            // Move to prev section's first card
+            focusSectionFirstCard(si - 1);
           } else {
-            var row = f.closest('.row-scroll');
-            if (row) {
-              var items = Array.from(row.querySelectorAll('.card'));
-              var ri = items.indexOf(f);
-              if (ri > 0) { items[ri - 1].setAttribute('tabindex', '0'); items[ri - 1].focus(); }
-              else { activeView.scrollBy({ top: -250, behavior: 'smooth' }); }
-            } else {
-              activeView.scrollBy({ top: -250, behavior: 'smooth' });
-            }
+            // At first section, scroll up
+            if (activeView) activeView.scrollBy({ top: -300, behavior: 'smooth' });
           }
-        } else {
-          if (activeView) activeView.scrollBy({ top: -250, behavior: 'smooth' });
+        } else if (isOnTab || isOnChip) {
+          // From tabs/chips, go up to content
+          var sections = getSections();
+          if (sections.length) focusSectionFirstCard(0);
         }
         e.preventDefault();
         break;
 
       case 40: // DOWN
         if (isOnNav) {
-          // Already at bottom nav, scroll view or do nothing
+          // Already at bottom nav, do nothing
         } else if (isOnCard) {
-          var grid = f.closest('.browse-grid, .mylist-grid');
-          if (grid) {
-            var cards = Array.from(grid.querySelectorAll('.card'));
-            var ci = cards.indexOf(f);
-            var cardW = f.offsetWidth + 16;
-            var cols = Math.max(1, Math.floor(grid.offsetWidth / cardW));
-            var next = ci + cols;
-            if (next < cards.length) { cards[next].setAttribute('tabindex', '0'); cards[next].focus(); }
-            else {
-              // Reached bottom of grid, go to bottom nav
-              var nav = getActiveNavItem();
-              if (nav) focusNavItem(nav);
-            }
+          var si = findSectionIndex(f);
+          var sections = getSections();
+          if (si < sections.length - 1) {
+            // Move to next section's first card
+            focusSectionFirstCard(si + 1);
           } else {
-            var row = f.closest('.row-scroll');
-            if (row) {
-              var items = Array.from(row.querySelectorAll('.card'));
-              var ri = items.indexOf(f);
-              if (ri < items.length - 1) { items[ri + 1].setAttribute('tabindex', '0'); items[ri + 1].focus(); }
-              else {
-                // End of row, go to nav
-                var nav = getActiveNavItem();
-                if (nav) focusNavItem(nav);
-              }
-            } else {
-              // Generic element, scroll down then go to nav
-              var view = activeView;
-              var atBottom = view.scrollTop + view.clientHeight >= view.scrollHeight - 50;
-              if (atBottom) {
-                var nav = getActiveNavItem();
-                if (nav) focusNavItem(nav);
-              } else {
-                view.scrollBy({ top: 250, behavior: 'smooth' });
-              }
-            }
+            // Last section → go to bottom nav
+            var nav = getActiveNavItem();
+            if (nav) focusNavItem(nav);
+          }
+        } else if (isOnTab || isOnChip) {
+          // From explore tabs → go to grid
+          var grid = activeView ? activeView.querySelector('.browse-grid') : null;
+          if (grid) {
+            var firstCard = grid.querySelector('.card');
+            if (firstCard) { firstCard.setAttribute('tabindex', '0'); firstCard.focus(); }
           }
         } else {
-          // For tabs, chips, buttons - try to go down to cards
-          if (activeView) {
-            var cards = activeView.querySelectorAll('.card');
-            if (cards.length) { cards[0].setAttribute('tabindex', '0'); cards[0].focus(); }
-            else { activeView.scrollBy({ top: 250, behavior: 'smooth' }); }
-          }
+          // Generic element (hero, buttons) → go to first section
+          var sections = getSections();
+          if (sections.length) focusSectionFirstCard(0);
         }
         e.preventDefault();
         break;
@@ -1305,14 +1334,14 @@ document.addEventListener('DOMContentLoaded', init);
   if (typeof origNav === 'function') {
     window.navigate = function() {
       origNav.apply(this, arguments);
-      setTimeout(initTvNav, 200);
+      setTimeout(initTvNav, 300);
     };
   }
 
   // Init
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() { setTimeout(initTvNav, 600); });
+    document.addEventListener('DOMContentLoaded', function() { setTimeout(initTvNav, 800); });
   } else {
-    setTimeout(initTvNav, 600);
+    setTimeout(initTvNav, 800);
   }
 })();
