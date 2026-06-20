@@ -105,6 +105,7 @@ function navigate(view) {
 
 function goBack() {
   if ($('#playerOverlay').classList.contains('active')) {
+    if (document.fullscreenElement || document.webkitFullscreenElement) toggleFullscreen();
     closePlayer();
     return;
   }
@@ -754,6 +755,11 @@ function openPlayer(url, title, tmdbId, mediaType, season, episode) {
   $('#playerFrame').src = url;
   window.open = () => null;
 
+  // On TV, focus the back button so D-pad works immediately
+  if (document.body.classList.contains('tv-mode')) {
+    setTimeout(function() { document.getElementById('playerBack').focus(); }, 300);
+  }
+
   // Progress tracking via postMessage
   if (token && tmdbId) {
     progressHandler = (event) => {
@@ -938,7 +944,10 @@ async function init() {
     e.stopPropagation();
     searchContainer.classList.toggle('open');
     if (searchContainer.classList.contains('open')) {
-      searchInput.focus();
+      // On TV, don't focus the input — D-pad navigates the button instead
+      if (!document.body.classList.contains('tv-mode')) {
+        searchInput.focus();
+      }
     } else {
       searchInput.value = '';
       doSearch('');
@@ -954,15 +963,22 @@ async function init() {
     searchTimeout = setTimeout(() => doSearch(e.target.value), 500);
   });
   searchInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { clearTimeout(searchTimeout); doSearch(e.target.value); }
-    if (e.key === 'Escape') { searchContainer.classList.remove('open'); searchInput.value = ''; doSearch(''); }
+    if (e.key === 'Enter') { clearTimeout(searchTimeout); doSearch(e.target.value); searchInput.blur(); }
+    if (e.key === 'Escape') { searchContainer.classList.remove('open'); searchInput.value = ''; doSearch(''); searchInput.blur(); }
+    // On TV, arrow keys exit the input and return to D-pad navigation
+    if (document.body.classList.contains('tv-mode') && ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) {
+      searchInput.blur();
+    }
   });
 
   // Load more
   $('#loadMoreBtn').onclick = () => { state.explorePage++; loadExplore(); };
 
   // Player back
-  $('#playerBack').onclick = closePlayer;
+  $('#playerBack').onclick = () => {
+    if (document.fullscreenElement || document.webkitFullscreenElement) toggleFullscreen();
+    closePlayer();
+  };
 
   // Logout
   $('#logoutBtn').onclick = logout;
@@ -1112,6 +1128,7 @@ document.addEventListener('DOMContentLoaded', init);
 
   var FOCUS_SEL = 'a,button,[onclick],.card,.filter-chip,.explore-tab,.mylist-tab,.mobile-nav-item,.sidebar-action-btn,.section-link';
   var TOPBAR_SEL = '#searchToggle, #logoutBtn';
+  var PLAYER_SEL = '#playerBack, #fullscreenBtn';
 
   function getAllFocusable() {
     var view = document.querySelector('.view.active');
@@ -1124,6 +1141,12 @@ document.addEventListener('DOMContentLoaded', init);
       seen.add(el);
       var rect = el.getBoundingClientRect();
       return rect.width > 0 && rect.height > 0;
+    });
+  }
+
+  function getPlayerFocusable() {
+    return Array.from(document.querySelectorAll(PLAYER_SEL)).filter(function(el) {
+      return el.getBoundingClientRect().width > 0;
     });
   }
 
@@ -1165,8 +1188,75 @@ document.addEventListener('DOMContentLoaded', init);
     if (all.length) focusEl(all[0]);
   }
 
+  function isPlayerActive() {
+    return document.getElementById('playerOverlay').classList.contains('active');
+  }
+
+  function isSearchInputFocused() {
+    return document.activeElement === document.getElementById('searchInput');
+  }
+
+  function closePlayerFromTv() {
+    if (document.fullscreenElement || document.webkitFullscreenElement) {
+      window.toggleFullscreen();
+    }
+    window.closePlayer();
+  }
+
   document.addEventListener('keydown', function(e) {
     var f = document.activeElement;
+
+    // Android back button (keycode 4) — close player or go back
+    if (e.keyCode === 4) {
+      if (isPlayerActive()) {
+        closePlayerFromTv();
+        e.preventDefault();
+        return;
+      }
+      if (isSearchInputFocused()) {
+        document.getElementById('searchInput').blur();
+        document.getElementById('topbarSearch').classList.remove('open');
+        e.preventDefault();
+        return;
+      }
+    }
+
+    // Skip D-pad handling if search input is focused — let the input handle its own keys
+    if (isSearchInputFocused()) return;
+
+    // Player overlay D-pad navigation
+    if (isPlayerActive()) {
+      var playerEls = getPlayerFocusable();
+      var pi = playerEls.indexOf(f);
+
+      switch (e.keyCode) {
+        case 27: // ESC
+        case 4:  // Android BACK
+          closePlayerFromTv();
+          e.preventDefault();
+          return;
+        case 37: // LEFT — focus player back button
+          focusEl(playerEls[0]);
+          e.preventDefault();
+          return;
+        case 39: // RIGHT — focus fullscreen button
+          focusEl(playerEls[playerEls.length - 1]);
+          e.preventDefault();
+          return;
+        case 38: // UP — stay on player controls
+        case 40: // DOWN — stay on player controls
+          e.preventDefault();
+          return;
+        case 13: // ENTER
+        case 66: // D-pad center / OK
+          if (pi >= 0) { f.click(); e.preventDefault(); return; }
+          // No player button focused — focus back button and click it
+          focusEl(playerEls[0]);
+          e.preventDefault();
+          return;
+      }
+      return; // Don't process any other keys while player is open
+    }
 
     // Handle filter dropdown menu navigation when open
     var openMenu = getOpenMenu();
@@ -1184,10 +1274,10 @@ document.addEventListener('DOMContentLoaded', init);
           case 13: // ENTER selects
           case 66:
             if (mi >= 0) { f.click(); e.preventDefault(); return; }
-            // If focus is on chip and menu is open, focus first menu item
             if (f.classList.contains('filter-chip') && menuItems.length) { focusEl(menuItems[0]); e.preventDefault(); return; }
             e.preventDefault(); return;
           case 27: // ESC closes menu
+          case 4:  // BACK closes menu
             openMenu.classList.remove('open');
             e.preventDefault(); return;
           case 37: // LEFT closes menu and goes to prev chip
@@ -1210,8 +1300,10 @@ document.addEventListener('DOMContentLoaded', init);
 
     switch (e.keyCode) {
       case 27: // ESC
-        // Close any open menu
+      case 4:  // Android BACK
         document.querySelectorAll('.filter-menu.open').forEach(function(m) { m.classList.remove('open'); });
+        if (state.view !== 'home') { window.goBack(); }
+        e.preventDefault();
         break;
 
       case 37: // LEFT
@@ -1261,7 +1353,6 @@ document.addEventListener('DOMContentLoaded', init);
           if (best) {
             focusEl(best);
           } else {
-            // At topmost content element — go to first topbar element
             var topbarEls = Array.from(document.querySelectorAll(TOPBAR_SEL)).filter(function(el) { return el.getBoundingClientRect().width > 0; });
             if (topbarEls.length) focusEl(topbarEls[0]);
           }
@@ -1296,13 +1387,14 @@ document.addEventListener('DOMContentLoaded', init);
         break;
 
       case 13: // ENTER
-      case 66:
+      case 66: // D-pad center / OK
         f.click();
         e.preventDefault();
         break;
     }
   });
 
+  // Re-init TV nav when view changes
   var origNav = window.navigate;
   if (typeof origNav === 'function') {
     window.navigate = function() {
