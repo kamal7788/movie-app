@@ -538,6 +538,9 @@ async function showDetail(type, id) {
     const cast = (data.credits?.cast || []).slice(0, 6);
 
     el.innerHTML = `
+      <button class="btn btn-ghost btn-sm detail-back-btn" onclick="goBack()" style="margin-bottom:12px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg> Back
+      </button>
       <div class="detail-hero">
         <div class="detail-hero-bg" style="background-image:url(${img(data.backdrop_path, 'original')})"></div>
         <div class="detail-hero-content fade-in">
@@ -700,12 +703,12 @@ window.showTVSeason = async function(tvId, season, showName) {
       </div>
       <div style="display:flex;flex-direction:column;gap:10px">
         ${(data.episodes || []).map(ep => `
-          <div class="card" style="width:100%;display:flex;flex-direction:row;border-radius:10px;overflow:hidden;cursor:pointer" onclick="playEpisode(${tvId}, ${season}, ${ep.episode_number}, '${showName.replace(/'/g,"\\'")}')">
-            ${ep.still_path ? `<img src="${img(ep.still_path, 'w300')}" style="width:200px;height:112px;object-fit:cover;flex-shrink:0" loading="lazy">` : `<div style="width:200px;height:112px;background:#1a1a24;flex-shrink:0"></div>`}
+          <div class="card episode-card" onclick="playEpisode(${tvId}, ${season}, ${ep.episode_number}, '${showName.replace(/'/g,"\\'")}')">
+            ${ep.still_path ? `<img src="${img(ep.still_path, 'w300')}" class="episode-thumb" loading="lazy">` : `<div class="episode-thumb"></div>`}
             <div class="card-body" style="flex:1;display:flex;flex-direction:column;justify-content:center">
               <div class="card-meta" style="margin-bottom:4px"><span>E${ep.episode_number}</span>${ep.air_date ? `<span>· ${ep.air_date}</span>` : ''}</div>
               <div class="card-title" style="white-space:normal">${ep.name}</div>
-              <div style="font-size:12px;color:var(--muted);margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${(ep.overview || '').replace(/<[^>]*>/g, '').slice(0, 120)}</div>
+              <div class="episode-overview">${(ep.overview || '').replace(/<[^>]*>/g, '').slice(0, 120)}</div>
             </div>
           </div>
         `).join('')}
@@ -743,12 +746,28 @@ function openPlayer(url, title, tmdbId, mediaType, season, episode) {
   // Progress tracking via postMessage
   if (token && tmdbId) {
     progressHandler = (event) => {
-      if (typeof event.data !== 'string') return;
       try {
-        const msg = JSON.parse(event.data);
-        if (msg.type !== 'PLAYER_EVENT' || !msg.data) return;
-        const { currentTime, duration, event: evt } = msg.data;
-        if (['timeupdate', 'pause', 'ended', 'seeked'].includes(evt)) {
+        let data = null;
+        if (typeof event.data === 'string') {
+          const msg = JSON.parse(event.data);
+          // VidKing多种格式: {type:'PLAYER_EVENT', data:{...}} or {event:'timeupdate', currentTime:..., duration:...} or {name:'timeupdate', args:[...]}
+          if (msg.type === 'PLAYER_EVENT' && msg.data) {
+            data = msg.data;
+          } else if (msg.event && (msg.currentTime !== undefined || msg.duration !== undefined)) {
+            data = { currentTime: msg.currentTime, duration: msg.duration, event: msg.event };
+          } else if (msg.name && msg.args) {
+            data = { currentTime: msg.args[0], duration: msg.args[1], event: msg.name };
+          }
+        } else if (event.data && typeof event.data === 'object') {
+          if (event.data.type === 'PLAYER_EVENT' && event.data.data) {
+            data = event.data.data;
+          } else if (event.data.event) {
+            data = event.data;
+          }
+        }
+        if (!data) return;
+        const { currentTime, duration, event: evt } = data;
+        if (['timeupdate', 'pause', 'ended', 'seeked', 'play', 'playing'].includes(evt)) {
           api('/api/auth/history', {
             method: 'POST',
             body: JSON.stringify({
