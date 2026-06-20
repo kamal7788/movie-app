@@ -241,8 +241,8 @@ async function loadExploreFilters() {
   if (state.filters['vote_average.gte']) {
     container.innerHTML += `<div class="filter-chip active" onclick="removeFilter('vote_average.gte')">Rating: ${state.filters['vote_average.gte']}+ <span class="x">×</span></div>`;
   }
-  if (state.filters[state.exploreType === 'movie' ? 'primary_release_year' : 'first_air_date_year']) {
-    const year = state.filters[state.exploreType === 'movie' ? 'primary_release_year' : 'first_air_date_year'];
+  if (state.filters['primary_release_year']) {
+    const year = state.filters['primary_release_year'];
     container.innerHTML += `<div class="filter-chip active" onclick="removeFilter('year')">Year: ${year} <span class="x">×</span></div>`;
   }
 
@@ -259,7 +259,8 @@ async function loadExploreFilters() {
 
   const years = [];
   for (let y = 2026; y >= 2000; y--) years.push({ value: y, label: String(y) });
-  const yearParam = state.exploreType === 'movie' ? 'primary_release_year' : 'first_air_date_year';
+  // Always use movie year param (loadExplore defaults to movie for 'all')
+  const yearParam = 'primary_release_year';
   if (!state.filters[yearParam]) {
     container.appendChild(makeFilterDropdown('Year', yearParam, years));
   }
@@ -313,7 +314,6 @@ function makeFilterDropdown(label, param, options) {
 function removeFilter(key) {
   if (key === 'year') {
     delete state.filters['primary_release_year'];
-    delete state.filters['first_air_date_year'];
   } else {
     delete state.filters[key];
   }
@@ -329,7 +329,15 @@ async function loadExplore() {
 
   const type = state.exploreType === 'all' ? 'movie' : state.exploreType;
   const params = { ...state.filters, page: state.explorePage, watch_region: 'US', sort_by: 'popularity.desc' };
-  if (state.exploreType === 'all') params.sort_by = 'popularity.desc';
+
+  // Convert year to strict date range
+  const yearParam = type === 'movie' ? 'primary_release_year' : 'first_air_date_year';
+  const year = params[yearParam];
+  if (year) {
+    delete params[yearParam];
+    params[type === 'movie' ? 'primary_release_date.gte' : 'first_air_date.gte'] = `${year}-01-01`;
+    params[type === 'movie' ? 'primary_release_date.lte' : 'first_air_date.lte'] = `${year}-12-31`;
+  }
 
   try {
     const data = await tmdb(`/discover/${type}`, params);
