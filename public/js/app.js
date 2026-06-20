@@ -2,7 +2,7 @@
    StreamFlix v3 - CineStream Style
    ============================================ */
 
-const API = '';
+const API = 'https://streamflix.kamalparajuli.com.np';
 const VIDKING = 'https://www.vidking.net/embed';
 const TMDB_IMG = 'https://image.tmdb.org/t/p';
 
@@ -1087,3 +1087,231 @@ async function changeOwnPassword() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
+
+/* ============ TV REMOTE / D-PAD NAVIGATION ============ */
+(function() {
+  function isTV() {
+    return /Android|SmartTV|GoogleTV|TiVo|CrKey|AFTM|AFTT|ADT|Build/.test(navigator.userAgent)
+      || (navigator.userAgent.indexOf('Mozilla/5.0') !== -1 && navigator.userAgent.indexOf('Android') !== -1 && navigator.userAgent.indexOf('TV') !== -1)
+      || window.innerWidth >= 960 && navigator.maxTouchPoints === 0;
+  }
+
+  if (!isTV()) return;
+
+  document.body.classList.add('tv-mode');
+
+  function initTvNav() {
+    // Make sidebar links non-focusable by default
+    document.querySelectorAll('.sidebar-link').forEach(el => el.setAttribute('tabindex', '-1'));
+    var sidebarUser = document.querySelector('.sidebar-user');
+    if (sidebarUser) sidebarUser.setAttribute('tabindex', '-1');
+    var sidebarBrand = document.querySelector('.sidebar-brand');
+    if (sidebarBrand) sidebarBrand.setAttribute('tabindex', '-1');
+
+    // Make first card or first actionable element in the main content focused
+    focusFirstContent();
+  }
+
+  function focusFirstContent() {
+    var view = document.querySelector('.view.active');
+    if (!view) return;
+    var firstCard = view.querySelector('.card, .btn, .explore-tab, .filter-chip, .mylist-tab, input');
+    if (firstCard) {
+      firstCard.setAttribute('tabindex', '0');
+      firstCard.focus();
+    }
+  }
+
+  document.addEventListener('keydown', function(e) {
+    var focused = document.activeElement;
+    if (!focused || focused === document.body || focused === document.documentElement) {
+      focusFirstContent();
+      return;
+    }
+
+    var activeView = document.querySelector('.view.active');
+    if (!activeView) return;
+
+    switch (e.keyCode) {
+      case 37: // Left
+        handleDpadLeft(focused, activeView);
+        e.preventDefault();
+        break;
+      case 39: // Right
+        handleDpadRight(focused, activeView);
+        e.preventDefault();
+        break;
+      case 38: // Up
+        handleDpadUp(focused, activeView);
+        e.preventDefault();
+        break;
+      case 40: // Down
+        handleDpadDown(focused, activeView);
+        e.preventDefault();
+        break;
+      case 13: // Enter / Select
+      case 66:
+        if (focused.classList.contains('card') || focused.classList.contains('sidebar-link')) {
+          focused.click();
+        }
+        e.preventDefault();
+        break;
+    }
+  });
+
+  function handleDpadLeft(focused, view) {
+    // If on a card in a row-scroll, scroll left
+    var row = focused.closest('.row-scroll');
+    if (row) {
+      row.scrollBy({ left: -300, behavior: 'smooth' });
+      return;
+    }
+    // If in a grid, move to previous card
+    var grid = focused.closest('.browse-grid, .mylist-grid');
+    if (grid) {
+      var cards = Array.from(grid.querySelectorAll('.card'));
+      var idx = cards.indexOf(focused);
+      if (idx > 0) {
+        cards[idx - 1].setAttribute('tabindex', '0');
+        cards[idx - 1].focus();
+      }
+      return;
+    }
+    // Jump to sidebar
+    var sidebarLinks = document.querySelectorAll('.sidebar-link');
+    sidebarLinks.forEach(function(el) { el.setAttribute('tabindex', '0'); });
+    var sidebarUser = document.querySelector('.sidebar-user');
+    if (sidebarUser) sidebarUser.setAttribute('tabindex', '0');
+    // Focus the active sidebar link or first one
+    var activeLink = document.querySelector('.sidebar-link.active');
+    if (activeLink) activeLink.focus();
+    else if (sidebarLinks.length) sidebarLinks[0].focus();
+  }
+
+  function handleDpadRight(focused, view) {
+    // If on sidebar, jump back to content
+    if (focused.classList.contains('sidebar-link') || focused.classList.contains('sidebar-user')) {
+      // Remove tabindex from sidebar
+      document.querySelectorAll('.sidebar-link').forEach(function(el) { el.setAttribute('tabindex', '-1'); });
+      var su = document.querySelector('.sidebar-user');
+      if (su) su.setAttribute('tabindex', '-1');
+      focusFirstContent();
+      return;
+    }
+    // If in a row-scroll, scroll right
+    var row = focused.closest('.row-scroll');
+    if (row) {
+      row.scrollBy({ left: 300, behavior: 'smooth' });
+      return;
+    }
+    // If in a grid, move to next card
+    var grid = focused.closest('.browse-grid, .mylist-grid');
+    if (grid) {
+      var cards = Array.from(grid.querySelectorAll('.card'));
+      var idx = cards.indexOf(focused);
+      if (idx < cards.length - 1) {
+        cards[idx + 1].setAttribute('tabindex', '0');
+        cards[idx + 1].focus();
+      }
+    }
+  }
+
+  function handleDpadUp(focused, view) {
+    // If in a grid, move to previous row
+    var grid = focused.closest('.browse-grid, .mylist-grid');
+    if (grid) {
+      var cards = Array.from(grid.querySelectorAll('.card'));
+      var idx = cards.indexOf(focused);
+      // Estimate columns based on grid width / card width
+      var cardWidth = 176;
+      var cols = Math.max(1, Math.floor(grid.offsetWidth / cardWidth));
+      var prevIdx = idx - cols;
+      if (prevIdx >= 0) {
+        cards[prevIdx].setAttribute('tabindex', '0');
+        cards[prevIdx].focus();
+      } else {
+        // At top row, scroll view up
+        view.scrollBy({ top: -200, behavior: 'smooth' });
+      }
+      return;
+    }
+    // If in a row-scroll, move to previous card
+    var row = focused.closest('.row-scroll');
+    if (row) {
+      var items = Array.from(row.children);
+      var ridx = items.indexOf(focused);
+      if (ridx > 0) {
+        items[ridx - 1].setAttribute('tabindex', '0');
+        items[ridx - 1].focus();
+      } else {
+        view.scrollBy({ top: -200, behavior: 'smooth' });
+      }
+      return;
+    }
+    // Default: scroll view up
+    view.scrollBy({ top: -200, behavior: 'smooth' });
+  }
+
+  function handleDpadDown(focused, view) {
+    // If on sidebar, move to next sidebar link
+    if (focused.classList.contains('sidebar-link')) {
+      var links = Array.from(document.querySelectorAll('.sidebar-link'));
+      var idx = links.indexOf(focused);
+      if (idx < links.length - 1) {
+        links[idx + 1].setAttribute('tabindex', '0');
+        links[idx + 1].focus();
+      } else {
+        var su = document.querySelector('.sidebar-user');
+        if (su) { su.setAttribute('tabindex', '0'); su.focus(); }
+      }
+      return;
+    }
+    // If in a grid, move to next row
+    var grid = focused.closest('.browse-grid, .mylist-grid');
+    if (grid) {
+      var cards = Array.from(grid.querySelectorAll('.card'));
+      var idx = cards.indexOf(focused);
+      var cardWidth = 176;
+      var cols = Math.max(1, Math.floor(grid.offsetWidth / cardWidth));
+      var nextIdx = idx + cols;
+      if (nextIdx < cards.length) {
+        cards[nextIdx].setAttribute('tabindex', '0');
+        cards[nextIdx].focus();
+      } else {
+        view.scrollBy({ top: 200, behavior: 'smooth' });
+      }
+      return;
+    }
+    // If in a row-scroll, move to next card
+    var row = focused.closest('.row-scroll');
+    if (row) {
+      var items = Array.from(row.children);
+      var ridx = items.indexOf(focused);
+      if (ridx < items.length - 1) {
+        items[ridx + 1].setAttribute('tabindex', '0');
+        items[ridx + 1].focus();
+      } else {
+        view.scrollBy({ top: 200, behavior: 'smooth' });
+      }
+      return;
+    }
+    // Default: scroll view down
+    view.scrollBy({ top: 200, behavior: 'smooth' });
+  }
+
+  // Re-init when view changes
+  var origNav = window.navigate;
+  if (typeof origNav === 'function') {
+    window.navigate = function() {
+      origNav.apply(this, arguments);
+      setTimeout(initTvNav, 100);
+    };
+  }
+
+  // Init on load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() { setTimeout(initTvNav, 500); });
+  } else {
+    setTimeout(initTvNav, 500);
+  }
+})();

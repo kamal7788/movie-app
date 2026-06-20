@@ -348,4 +348,16 @@ a{color:var(--accent);text-decoration:none}
 }
 
 /* Focus for D-pad/remote */
-.card:focus,.card.focused,.btn:focus,.btn.focused,.sidebar-link:focus,.sidebar-link.focused,.filter-chip:focus,.filter-chip.focused,.explore-tab:focus,.explore-tab.focused,.mylist-tab:focus,.mylist-tab.focused,.sidebar-action-btn:focus,.sidebar-action-btn.focused,.mobile-nav-item:focus,.mobile-nav-item.focused{outline:2px solid var(--accent);outline-offset:2px}
+.card:focus,.card.focused,.btn:focus,.btn.focused,.filter-chip:focus,.filter-chip.focused,.explore-tab:focus,.explore-tab.focused,.mylist-tab:focus,.mylist-tab.focused,.sidebar-action-btn:focus,.sidebar-action-btn.focused,.mobile-nav-item:focus,.mobile-nav-item.focused{outline:2px solid var(--accent);outline-offset:2px}
+
+/* TV remote: disable tab on sidebar links by default */
+.sidebar-link[tabindex="-1"],.sidebar-user[tabindex="-1"]{outline:none}
+.sidebar-link[tabindex="-1"]:focus{outline:none}
+
+/* TV mode: sidebar gets focus only when explicitly navigated */
+body.tv-mode .sidebar-link,body.tv-mode .sidebar-brand,body.tv-mode .sidebar-user{pointer-events:auto}
+body.tv-mode .view{overflow-y:auto;-webkit-overflow-scrolling:touch}
+body.tv-mode .card{outline:none}
+body.tv-mode .card:focus{outline:2px solid var(--accent);outline-offset:2px;transform:scale(1.04)}
+body.tv-mode .row-scroll{scrollbar-width:auto}
+body.tv-mode .browse-grid{scrollbar-width:auto}
