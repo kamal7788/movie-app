@@ -5,13 +5,13 @@ services:
     build: .
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "6969:6969"
     environment:
       - DATABASE_URL=postgresql://streamflix:streamflix@db:5432/streamflix
       - JWT_SECRET=${JWT_SECRET}
       - TMDB_API_KEY=${TMDB_API_KEY}
       - NODE_ENV=production
-      - PORT=3000
+      - PORT=6969
     depends_on:
       db:
         condition: service_healthy

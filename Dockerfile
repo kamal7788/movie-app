@@ -8,6 +8,6 @@ RUN npm ci --omit=dev
 COPY server/ ./server/
 COPY public/ ./public/
 
-EXPOSE 3000
+EXPOSE 6969
 
 CMD ["node", "server/index.js"]
