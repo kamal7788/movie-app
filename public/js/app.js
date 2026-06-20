@@ -77,7 +77,14 @@ function showApp() {
     $('#userAvatar').textContent = currentUser.username.charAt(0).toUpperCase();
     $('#userName').textContent = currentUser.username;
     const adminLink = $('#adminLink');
-    if (currentUser.is_admin) { adminLink.style.display = ''; } else { adminLink.style.display = 'none'; }
+    const mobileAdminLink = $('#mobileAdminLink');
+    if (currentUser.is_admin) {
+      if (adminLink) adminLink.style.display = '';
+      if (mobileAdminLink) mobileAdminLink.style.display = '';
+    } else {
+      if (adminLink) adminLink.style.display = 'none';
+      if (mobileAdminLink) mobileAdminLink.style.display = 'none';
+    }
   }
   loadHome();
 }
@@ -89,6 +96,7 @@ function navigate(view) {
   $$('.view').forEach(v => v.classList.remove('active'));
   $(`#${view}View`).classList.add('active');
   $$('.sidebar-link').forEach(l => l.classList.toggle('active', l.dataset.view === view));
+  $$('.mobile-nav-item').forEach(l => l.classList.toggle('active', l.dataset.view === view));
   $(`#${view}View`).scrollTop = 0;
 
   if (view === 'admin') loadAdminUsers();
@@ -96,16 +104,46 @@ function navigate(view) {
 }
 
 function goBack() {
+  if ($('#playerOverlay').classList.contains('active')) {
+    closePlayer();
+    return;
+  }
   if (state.history.length) {
     const prev = state.history.pop();
     state.view = prev;
     $$('.view').forEach(v => v.classList.remove('active'));
     $(`#${prev}View`).classList.add('active');
     $$('.sidebar-link').forEach(l => l.classList.toggle('active', l.dataset.view === prev));
+    $$('.mobile-nav-item').forEach(l => l.classList.toggle('active', l.dataset.view === prev));
   } else {
     navigate('home');
   }
 }
+window.goBack = goBack;
+
+/* ============ FULLSCREEN ============ */
+function toggleFullscreen() {
+  const overlay = $('#playerOverlay');
+  const el = document.documentElement;
+
+  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+    if (el.requestFullscreen) el.requestFullscreen();
+    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    overlay.classList.add('fullscreen');
+  } else {
+    if (document.exitFullscreen) document.exitFullscreen();
+    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+    overlay.classList.remove('fullscreen');
+  }
+}
+window.toggleFullscreen = toggleFullscreen;
+
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement) $('#playerOverlay').classList.remove('fullscreen');
+});
+document.addEventListener('webkitfullscreenchange', () => {
+  if (!document.webkitFullscreenElement) $('#playerOverlay').classList.remove('fullscreen');
+});
 
 /* ============ HOME ============ */
 async function loadHome() {
@@ -739,7 +777,11 @@ function closePlayer() {
 /* ============ SEARCH ============ */
 let searchTimeout;
 async function doSearch(query) {
-  if (!query.trim()) return;
+  if (!query.trim()) {
+    // If search is cleared, reload explore if we're on explore view
+    if (state.view === 'explore') { loadExplore(); }
+    return;
+  }
   navigate('explore');
   state.exploreType = 'all';
   state.filters = {};
@@ -779,7 +821,13 @@ async function doSearch(query) {
 document.addEventListener('keydown', (e) => {
   if ($('#authScreen').style.display !== 'none') return;
   if ($('#playerOverlay').classList.contains('active')) {
-    if (e.key === 'Escape') closePlayer();
+    if (e.key === 'Escape') {
+      if (document.fullscreenElement || document.webkitFullscreenElement) {
+        toggleFullscreen();
+      } else {
+        closePlayer();
+      }
+    }
     return;
   }
   if (e.key === 'Escape' && state.view !== 'home') goBack();
@@ -804,6 +852,18 @@ async function init() {
 
   // Sidebar nav
   $$('.sidebar-link').forEach(link => {
+    link.onclick = () => {
+      const view = link.dataset.view;
+      if (view === 'home') { state.history = []; navigate('home'); loadHome(); }
+      else if (view === 'explore') { state.history = []; navigate('explore'); state.explorePage = 1; state.filters = {}; loadExploreFilters(); loadExplore(); }
+      else if (view === 'mylist') { state.history = []; navigate('mylist'); loadMyList(); }
+      else if (view === 'admin') { state.history = []; navigate('admin'); }
+      else if (view === 'profile') { state.history = []; navigate('profile'); }
+    };
+  });
+
+  // Mobile bottom nav
+  $$('.mobile-nav-item').forEach(link => {
     link.onclick = () => {
       const view = link.dataset.view;
       if (view === 'home') { state.history = []; navigate('home'); loadHome(); }
@@ -840,13 +900,32 @@ async function init() {
     tab.onclick = () => loadMyList(tab.dataset.tab);
   });
 
-  // Search
-  $('#searchInput').addEventListener('input', (e) => {
+  // Search toggle
+  const searchContainer = $('#topbarSearch');
+  const searchToggle = $('#searchToggle');
+  const searchInput = $('#searchInput');
+  searchToggle.onclick = (e) => {
+    e.stopPropagation();
+    searchContainer.classList.toggle('open');
+    if (searchContainer.classList.contains('open')) {
+      searchInput.focus();
+    } else {
+      searchInput.value = '';
+      doSearch('');
+    }
+  };
+  document.addEventListener('click', (e) => {
+    if (!searchContainer.contains(e.target)) {
+      searchContainer.classList.remove('open');
+    }
+  });
+  searchInput.addEventListener('input', (e) => {
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => doSearch(e.target.value), 500);
   });
-  $('#searchInput').addEventListener('keydown', (e) => {
+  searchInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') { clearTimeout(searchTimeout); doSearch(e.target.value); }
+    if (e.key === 'Escape') { searchContainer.classList.remove('open'); searchInput.value = ''; doSearch(''); }
   });
 
   // Load more
