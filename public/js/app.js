@@ -1106,51 +1106,27 @@ document.addEventListener('DOMContentLoaded', init);
 
   document.body.classList.add('tv-mode');
 
-  var FOCUS_SEL = 'a,button,[onclick],.card,.filter-chip,.explore-tab,.mylist-tab,.mobile-nav-item,.sidebar-action-btn,.section-link,[tabindex="0"]';
-
-  function getNavItems() {
-    return Array.from(document.querySelectorAll('.mobile-nav-item'));
-  }
+  var FOCUS_SEL = 'a,button,[onclick],.card,.filter-chip,.explore-tab,.mylist-tab,.mobile-nav-item,.sidebar-action-btn,.section-link';
 
   function getAllFocusable() {
     var view = document.querySelector('.view.active');
-    if (!view) return [];
-    return Array.from(view.querySelectorAll(FOCUS_SEL)).filter(function(el) {
-      if (el.offsetParent === null && !el.closest('.mobile-nav')) return false;
+    var navEls = getNavItems();
+    var viewEls = view ? Array.from(view.querySelectorAll(FOCUS_SEL)) : [];
+    var all = viewEls.concat(navEls);
+    return all.filter(function(el) {
       var rect = el.getBoundingClientRect();
       return rect.width > 0 && rect.height > 0;
     });
   }
 
-  function getNavFocusable() {
-    return getNavItems().filter(function(el) {
+  function getNavItems() {
+    return Array.from(document.querySelectorAll('.mobile-nav-item')).filter(function(el) {
       return el.getBoundingClientRect().width > 0;
     });
   }
 
-  function groupByRow(elements) {
-    var rows = [];
-    var sorted = elements.slice().sort(function(a, b) {
-      return a.getBoundingClientRect().top - b.getBoundingClientRect().top;
-    });
-    sorted.forEach(function(el) {
-      var top = Math.round(el.getBoundingClientRect().top);
-      var existing = rows.find(function(r) { return Math.abs(r.y - top) < 30; });
-      if (existing) {
-        existing.items.push(el);
-      } else {
-        rows.push({ y: top, items: [el] });
-      }
-    });
-    rows.sort(function(a, b) { return a.y - b.y; });
-    return rows;
-  }
-
-  function findRowIdx(rows, el) {
-    for (var i = 0; i < rows.length; i++) {
-      if (rows[i].items.indexOf(el) !== -1) return i;
-    }
-    return -1;
+  function sameRow(a, b) {
+    return Math.abs(a.getBoundingClientRect().top - b.getBoundingClientRect().top) < 60;
   }
 
   function focusEl(el) {
@@ -1161,8 +1137,8 @@ document.addEventListener('DOMContentLoaded', init);
 
   function initTvNav() {
     getNavItems().forEach(function(el) { el.setAttribute('tabindex', '0'); });
-    var focusable = getAllFocusable();
-    if (focusable.length) focusEl(focusable[0]);
+    var all = getAllFocusable();
+    if (all.length) focusEl(all[0]);
   }
 
   document.addEventListener('keydown', function(e) {
@@ -1172,95 +1148,79 @@ document.addEventListener('DOMContentLoaded', init);
       return;
     }
 
-    var activeView = document.querySelector('.view.active');
-    if (!activeView) return;
-
+    var all = getAllFocusable();
+    var idx = all.indexOf(f);
     var isOnNav = f.classList.contains('mobile-nav-item');
-    var allFocusable = getAllFocusable();
-    var rows = groupByRow(allFocusable);
-    var navFocusable = getNavFocusable();
-    var navRows = groupByRow(navFocusable);
-
-    // Combine content rows + nav rows
-    var allRows = rows.concat(navRows);
-
-    var rowIdx = findRowIdx(rows, f);
-    var navRowIdx = isOnNav ? findRowIdx(navRows, f) : -1;
 
     switch (e.keyCode) {
-      case 37: // LEFT
+      case 37: // LEFT - move to prev item on same visual row
         if (isOnNav) {
-          var idx = navFocusable.indexOf(f);
-          if (idx > 0) focusEl(navFocusable[idx - 1]);
-        } else {
-          // Find prev item in same row
-          if (rowIdx >= 0) {
-            var rowItems = rows[rowIdx].items;
-            var ci = rowItems.indexOf(f);
-            if (ci > 0) focusEl(rowItems[ci - 1]);
+          var navItems = getNavItems();
+          var ni = navItems.indexOf(f);
+          if (ni > 0) focusEl(navItems[ni - 1]);
+        } else if (idx >= 0) {
+          for (var i = idx - 1; i >= 0; i--) {
+            if (sameRow(f, all[i])) { focusEl(all[i]); break; }
           }
         }
         e.preventDefault();
         break;
 
-      case 39: // RIGHT
+      case 39: // RIGHT - move to next item on same visual row
         if (isOnNav) {
-          var idx = navFocusable.indexOf(f);
-          if (idx < navFocusable.length - 1) focusEl(navFocusable[idx + 1]);
-        } else {
-          if (rowIdx >= 0) {
-            var rowItems = rows[rowIdx].items;
-            var ci = rowItems.indexOf(f);
-            if (ci < rowItems.length - 1) focusEl(rowItems[ci + 1]);
+          var navItems = getNavItems();
+          var ni = navItems.indexOf(f);
+          if (ni < navItems.length - 1) focusEl(navItems[ni + 1]);
+        } else if (idx >= 0) {
+          for (var i = idx + 1; i < all.length; i++) {
+            if (sameRow(f, all[i])) { focusEl(all[i]); break; }
           }
         }
         e.preventDefault();
         break;
 
-      case 38: // UP
+      case 38: // UP - move to nearest item in the row above
         if (isOnNav) {
-          // From nav, go to last content row
-          if (rows.length) {
-            var lastRow = rows[rows.length - 1];
-            focusEl(lastRow.items[Math.floor(lastRow.items.length / 2)]);
+          // From nav, find last content item
+          var contentItems = all.filter(function(el) { return !el.classList.contains('mobile-nav-item'); });
+          if (contentItems.length) focusEl(contentItems[contentItems.length - 1]);
+        } else if (idx >= 0) {
+          var curX = f.getBoundingClientRect().left + f.getBoundingClientRect().width / 2;
+          var best = null, bestDist = Infinity;
+          for (var i = idx - 1; i >= 0; i--) {
+            if (sameRow(f, all[i])) continue; // skip same row
+            var r = all[i].getBoundingClientRect();
+            var dist = Math.abs(r.left + r.width / 2 - curX) + Math.abs(r.top - f.getBoundingClientRect().top) * 0.5;
+            if (dist < bestDist) { bestDist = dist; best = all[i]; }
+            if (bestDist < 200) break; // found a close match in a different row
           }
-        } else if (rowIdx > 0) {
-          // Go to prev row, pick item closest to current X
-          var prevRow = rows[rowIdx - 1];
-          var curX = f.getBoundingClientRect().left;
-          var best = prevRow.items[0];
-          var bestDist = 9999;
-          prevRow.items.forEach(function(item) {
-            var dist = Math.abs(item.getBoundingClientRect().left - curX);
-            if (dist < bestDist) { bestDist = dist; best = item; }
-          });
-          focusEl(best);
-        } else if (rowIdx === 0) {
-          // At first row, scroll up
-          activeView.scrollBy({ top: -300, behavior: 'smooth' });
+          if (best) focusEl(best);
         }
         e.preventDefault();
         break;
 
-      case 40: // DOWN
+      case 40: // DOWN - move to nearest item in the row below
         if (isOnNav) {
-          // At bottom nav, do nothing
-        } else if (rowIdx >= 0 && rowIdx < rows.length - 1) {
-          // Go to next row, pick item closest to current X
-          var nextRow = rows[rowIdx + 1];
-          var curX = f.getBoundingClientRect().left;
-          var best = nextRow.items[0];
-          var bestDist = 9999;
-          nextRow.items.forEach(function(item) {
-            var dist = Math.abs(item.getBoundingClientRect().left - curX);
-            if (dist < bestDist) { bestDist = dist; best = item; }
-          });
-          focusEl(best);
-        } else if (rowIdx === rows.length - 1) {
-          // Last content row → go to nav
-          if (navFocusable.length) {
-            var activeNav = document.querySelector('.mobile-nav-item.active');
-            focusEl(activeNav || navFocusable[0]);
+          // At bottom nav, stay
+        } else if (idx >= 0) {
+          var curX = f.getBoundingClientRect().left + f.getBoundingClientRect().width / 2;
+          var best = null, bestDist = Infinity;
+          for (var i = idx + 1; i < all.length; i++) {
+            if (sameRow(f, all[i])) continue; // skip same row
+            var r = all[i].getBoundingClientRect();
+            var dist = Math.abs(r.left + r.width / 2 - curX) + Math.abs(r.top - f.getBoundingClientRect().top) * 0.5;
+            if (dist < bestDist) { bestDist = dist; best = all[i]; }
+            if (bestDist < 200) break; // found a close match in a different row
+          }
+          if (best) {
+            focusEl(best);
+          } else {
+            // No more rows below → go to nav
+            var navItems = getNavItems();
+            if (navItems.length) {
+              var activeNav = document.querySelector('.mobile-nav-item.active');
+              focusEl(activeNav || navItems[0]);
+            }
           }
         }
         e.preventDefault();
