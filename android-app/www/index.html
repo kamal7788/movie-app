@@ -2,82 +2,246 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#0a0a0f">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <title>StreamFlix</title>
-  <style>
-    *{margin:0;padding:0;box-sizing:border-box}
-    html,body{height:100%;overflow:hidden;background:#0a0a0f}
-    #splash{position:fixed;inset:0;background:#0a0a0f;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity .4s}
-    #splash.hide{opacity:0;pointer-events:none}
-    .logo{color:#c8ff00;font-size:36px;font-weight:900;letter-spacing:-1px}
-    .sub{color:#555;font-size:11px;margin-top:6px;text-transform:uppercase;letter-spacing:2px}
-    .loader{margin-top:28px;display:flex;align-items:center;gap:10px}
-    .spinner{width:20px;height:20px;border:2px solid #222;border-top-color:#c8ff00;border-radius:50%;animation:spin .7s linear infinite}
-    @keyframes spin{to{transform:rotate(360deg)}}
-    .stxt{color:#666;font-size:12px}
-    #errWrap{display:none;position:fixed;inset:0;background:#0a0a0f;flex-direction:column;align-items:center;justify-content:center;z-index:10000;color:#fff}
-    #errWrap h2{color:#c8ff00;margin-bottom:10px;font-size:20px}
-    #errWrap p{color:#777;font-size:13px;text-align:center;margin-bottom:20px;line-height:1.6}
-    #retryBtn{background:#c8ff00;color:#000;border:none;padding:10px 28px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer}
-    #appFrame{position:fixed;inset:0;width:100%;height:100%;border:none;z-index:1;background:#0a0a0f}
-  </style>
+  <base href="https://streamflix.kamalparajuli.com.np/">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>▶</text></svg>">
 </head>
 <body>
-  <div id="splash">
-    <div class="logo">StreamFlix</div>
-    <div class="sub">Premium Cinema</div>
-    <div class="loader">
-      <div class="spinner"></div>
-      <div class="stxt" id="stxt">Loading...</div>
+
+  <!-- AUTH -->
+  <div id="authScreen" class="auth-screen">
+    <div class="auth-bg"></div>
+    <div class="auth-box">
+      <h1 class="auth-logo">StreamFlix</h1>
+      <p class="auth-tagline">Premium Cinema</p>
+      <div class="auth-card">
+        <h2>Log In</h2>
+        <label class="field-label">Email Address</label>
+        <input type="email" id="loginEmail" placeholder="name@example.com" autocomplete="email">
+        <label class="field-label">Password</label>
+        <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
+        <button class="auth-btn" id="loginBtn">Continue</button>
+        <p class="auth-error" id="loginError"></p>
+      </div>
+      <p class="auth-footer">Contact your administrator to get an account</p>
     </div>
   </div>
-  <div id="errWrap">
-    <h2>Connection Error</h2>
-    <p>Could not reach the server.<br>Check your internet and try again.</p>
-    <button id="retryBtn">Retry</button>
+
+  <!-- APP LAYOUT -->
+  <div id="app" class="app-layout" style="display:none">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <h1>StreamFlix</h1>
+        <span>Premium Cinema</span>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="sidebar-link active" data-view="home">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <span>Home</span>
+        </div>
+        <div class="sidebar-link" data-view="explore">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+          <span>Explore</span>
+        </div>
+        <div class="sidebar-link" data-view="mylist">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+          <span>Watchlist</span>
+        </div>
+        <div class="sidebar-link" data-view="admin" id="adminLink" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span>Users</span>
+        </div>
+        <div class="sidebar-link" data-view="profile">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span>Profile</span>
+        </div>
+      </nav>
+      <div class="sidebar-user">
+        <div class="sidebar-user-avatar" id="userAvatar">A</div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name" id="userName">User</div>
+          <div class="sidebar-user-role">Member</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main-content">
+      <header class="topbar">
+        <div class="topbar-search" id="topbarSearch">
+          <button class="topbar-icon" id="searchToggle" title="Search">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          </button>
+          <input type="text" id="searchInput" class="search-expanded" placeholder="Search movies, series, actors...">
+        </div>
+        <div class="topbar-right">
+          <button class="topbar-icon" id="logoutBtn" title="Sign Out">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- HOME VIEW -->
+      <div class="view active" id="homeView">
+        <div id="heroHome" class="hero-home"></div>
+        <div id="homeSections"></div>
+      </div>
+
+      <!-- EXPLORE VIEW -->
+      <div class="view" id="exploreView">
+        <div class="explore-bar" id="exploreBar">
+          <div class="explore-tabs" id="exploreTabs">
+            <button class="explore-tab active" data-type="all">All</button>
+            <button class="explore-tab" data-type="movie">Movies</button>
+            <button class="explore-tab" data-type="tv">TV Series</button>
+          </div>
+          <div class="explore-filters" id="exploreFilters"></div>
+        </div>
+        <div class="browse-grid" id="exploreGrid"></div>
+        <div class="load-more" id="loadMore" style="display:none">
+          <button id="loadMoreBtn">LOAD MORE RESULTS</button>
+          <div class="load-more-info" id="loadMoreInfo"></div>
+        </div>
+      </div>
+
+      <!-- MY LIST VIEW -->
+      <div class="view" id="mylistView">
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
+          <h2 style="font-size:22px;font-weight:700">My Library</h2>
+        </div>
+        <div class="mylist-stats" id="mylistStats"></div>
+        <div class="mylist-tabs" id="mylistTabs">
+          <button class="mylist-tab active" data-tab="all">All</button>
+          <button class="mylist-tab" data-tab="favorites">Favorites</button>
+          <button class="mylist-tab" data-tab="watchlist">To Watch</button>
+          <button class="mylist-tab" data-tab="continue">Watching</button>
+        </div>
+        <div class="mylist-grid" id="mylistGrid"></div>
+      </div>
+
+      <!-- DETAIL VIEW -->
+      <div class="view" id="detailView"></div>
+
+      <!-- ADMIN VIEW -->
+      <div class="view" id="adminView">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+          <h2 style="font-size:22px;font-weight:700">User Management</h2>
+          <button class="btn btn-accent btn-sm" id="addUserBtn">+ Add User</button>
+        </div>
+        <div id="adminUserList"></div>
+
+        <!-- Add/Edit User Modal -->
+        <div class="modal-overlay" id="userModal" style="display:none">
+          <div class="modal-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+              <h3 id="modalTitle" style="font-size:18px;font-weight:700">Add User</h3>
+              <button class="btn-close" id="closeModal">&times;</button>
+            </div>
+            <input type="hidden" id="editUserId">
+            <label class="field-label">Username</label>
+            <input type="text" id="modalUsername" placeholder="username">
+            <label class="field-label">Email</label>
+            <input type="email" id="modalEmail" placeholder="email@example.com">
+            <label class="field-label" id="modalPassLabel">Password</label>
+            <input type="password" id="modalPassword" placeholder="••••••••">
+            <div style="display:flex;gap:10px;margin-top:20px">
+              <button class="btn btn-accent" style="flex:1" id="modalSaveBtn">Save</button>
+              <button class="btn btn-ghost" id="modalCancelBtn">Cancel</button>
+            </div>
+            <p class="auth-error" id="modalError"></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROFILE VIEW -->
+      <div class="view" id="profileView">
+        <h2 style="font-size:22px;font-weight:700;margin-bottom:24px">Profile</h2>
+        <div class="profile-card">
+          <div class="profile-avatar" id="profileAvatar">A</div>
+          <div class="profile-info">
+            <div class="detail-label">Username</div>
+            <div class="detail-value" id="profileUsername">-</div>
+            <div class="detail-label">Email</div>
+            <div class="detail-value" id="profileEmail">-</div>
+            <div class="detail-label">Role</div>
+            <div class="detail-value" id="profileRole">-</div>
+            <div class="detail-label">Member Since</div>
+            <div class="detail-value" id="profileSince">-</div>
+          </div>
+        </div>
+
+        <h3 style="font-size:16px;font-weight:700;margin:28px 0 14px">Change Password</h3>
+        <div class="profile-card" style="max-width:400px">
+          <label class="field-label">Current Password</label>
+          <input type="password" id="changePassCurrent" placeholder="••••••••">
+          <label class="field-label">New Password</label>
+          <input type="password" id="changePassNew" placeholder="••••••••">
+          <button class="btn btn-accent btn-sm" id="changePassBtn" style="margin-top:8px">Update Password</button>
+          <p class="auth-error" id="changePassError"></p>
+        </div>
+      </div>
+
+    </div>
   </div>
-  <iframe id="appFrame" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox" allow="autoplay; fullscreen; encrypted-media"></iframe>
-  <script>
-    var SERVER = 'https://streamflix.kamalparajuli.com.np/';
-    var splash = document.getElementById('splash');
-    var errWrap = document.getElementById('errWrap');
-    var frame = document.getElementById('appFrame');
-    var stxt = document.getElementById('stxt');
-    var tries = 0;
 
-    function go() {
-      tries++;
-      stxt.textContent = 'Loading... (attempt ' + tries + ')';
-      errWrap.style.display = 'none';
-      splash.classList.remove('hide');
+  <!-- MOBILE BOTTOM NAV -->
+  <nav class="mobile-nav" id="mobileNav">
+    <div class="mobile-nav-item active" data-view="home">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>Home</span>
+    </div>
+    <div class="mobile-nav-item" data-view="explore">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+      <span>Explore</span>
+    </div>
+    <div class="mobile-nav-item" data-view="mylist">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+      <span>My List</span>
+    </div>
+    <div class="mobile-nav-item" data-view="admin" id="mobileAdminLink" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>Users</span>
+    </div>
+    <div class="mobile-nav-item" data-view="profile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span>Profile</span>
+    </div>
+  </nav>
 
-      var loadTimer = setTimeout(function() {
-        if (tries < 4) go();
-        else showError();
-      }, 15000);
+  <!-- PLAYER OVERLAY -->
+  <div class="player-overlay" id="playerOverlay">
+    <div class="player-topbar">
+      <button class="player-back" id="playerBack">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <span class="player-title-text" id="playerTitle"></span>
+      <div class="player-topbar-right">
+        <button class="player-fullscreen-btn" id="fullscreenBtn" onclick="toggleFullscreen()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+          Fullscreen
+        </button>
+      </div>
+    </div>
+    <div class="player-frame">
+      <iframe id="playerFrame" allow="autoplay; fullscreen; encrypted-media" allowfullscreen></iframe>
+    </div>
+    <div class="player-bottom">
+      <span>VidKing Player</span>
+      <span id="playerHint">Back to close</span>
+    </div>
+  </div>
 
-      frame.onload = function() {
-        clearTimeout(loadTimer);
-        splash.classList.add('hide');
-      };
+  <div class="loading-spinner" id="loadingSpinner"><div class="spinner"></div></div>
 
-      frame.onerror = function() {
-        clearTimeout(loadTimer);
-        if (tries < 4) setTimeout(go, 2000);
-        else showError();
-      };
-
-      frame.src = SERVER;
-    }
-
-    function showError() {
-      splash.classList.add('hide');
-      errWrap.style.display = 'flex';
-    }
-
-    document.getElementById('retryBtn').onclick = function() { tries = 0; go(); };
-    go();
-  </script>
+  <script src="js/app.js"></script>
 </body>
 </html>

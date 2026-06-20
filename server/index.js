@@ -15,7 +15,10 @@ const PORT = process.env.PORT || 6969;
 app.use(helmet({
   contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false,
+  crossOriginOpenerPolicy: false,
+  crossOriginResourcePolicy: false,
   frameguard: false,
+  referrerPolicy: false,
 }));
 app.use(compression());
 app.use(cors());
