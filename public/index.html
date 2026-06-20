@@ -55,6 +55,14 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
           <span>Watchlist</span>
         </div>
+        <div class="sidebar-link" data-view="admin" id="adminLink" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span>Users</span>
+        </div>
+        <div class="sidebar-link" data-view="profile">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span>Profile</span>
+        </div>
       </nav>
       <div class="sidebar-user">
         <div class="sidebar-user-avatar" id="userAvatar">A</div>
@@ -117,6 +125,65 @@
 
       <!-- DETAIL VIEW -->
       <div class="view" id="detailView"></div>
+
+      <!-- ADMIN VIEW -->
+      <div class="view" id="adminView">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+          <h2 style="font-size:22px;font-weight:700">User Management</h2>
+          <button class="btn btn-accent btn-sm" id="addUserBtn">+ Add User</button>
+        </div>
+        <div id="adminUserList"></div>
+
+        <!-- Add/Edit User Modal -->
+        <div class="modal-overlay" id="userModal" style="display:none">
+          <div class="modal-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+              <h3 id="modalTitle" style="font-size:18px;font-weight:700">Add User</h3>
+              <button class="btn-close" id="closeModal">&times;</button>
+            </div>
+            <input type="hidden" id="editUserId">
+            <label class="field-label">Username</label>
+            <input type="text" id="modalUsername" placeholder="username">
+            <label class="field-label">Email</label>
+            <input type="email" id="modalEmail" placeholder="email@example.com">
+            <label class="field-label" id="modalPassLabel">Password</label>
+            <input type="password" id="modalPassword" placeholder="••••••••">
+            <div style="display:flex;gap:10px;margin-top:20px">
+              <button class="btn btn-accent" style="flex:1" id="modalSaveBtn">Save</button>
+              <button class="btn btn-ghost" id="modalCancelBtn">Cancel</button>
+            </div>
+            <p class="auth-error" id="modalError"></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROFILE VIEW -->
+      <div class="view" id="profileView">
+        <h2 style="font-size:22px;font-weight:700;margin-bottom:24px">Profile</h2>
+        <div class="profile-card">
+          <div class="profile-avatar" id="profileAvatar">A</div>
+          <div class="profile-info">
+            <div class="detail-label">Username</div>
+            <div class="detail-value" id="profileUsername">-</div>
+            <div class="detail-label">Email</div>
+            <div class="detail-value" id="profileEmail">-</div>
+            <div class="detail-label">Role</div>
+            <div class="detail-value" id="profileRole">-</div>
+            <div class="detail-label">Member Since</div>
+            <div class="detail-value" id="profileSince">-</div>
+          </div>
+        </div>
+
+        <h3 style="font-size:16px;font-weight:700;margin:28px 0 14px">Change Password</h3>
+        <div class="profile-card" style="max-width:400px">
+          <label class="field-label">Current Password</label>
+          <input type="password" id="changePassCurrent" placeholder="••••••••">
+          <label class="field-label">New Password</label>
+          <input type="password" id="changePassNew" placeholder="••••••••">
+          <button class="btn btn-accent btn-sm" id="changePassBtn" style="margin-top:8px">Update Password</button>
+          <p class="auth-error" id="changePassError"></p>
+        </div>
+      </div>
 
     </div>
   </div>

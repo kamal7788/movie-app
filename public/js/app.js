@@ -8,6 +8,7 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p';
 
 const $ = (s, p = document) => p.querySelector(s);
 const $$ = (s, p = document) => [...p.querySelectorAll(s)];
+const esc = s => String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
 let token = localStorage.getItem('sf_token');
 let currentUser = null;
@@ -75,6 +76,8 @@ function showApp() {
   if (currentUser) {
     $('#userAvatar').textContent = currentUser.username.charAt(0).toUpperCase();
     $('#userName').textContent = currentUser.username;
+    const adminLink = $('#adminLink');
+    if (currentUser.is_admin) { adminLink.style.display = ''; } else { adminLink.style.display = 'none'; }
   }
   loadHome();
 }
@@ -87,6 +90,9 @@ function navigate(view) {
   $(`#${view}View`).classList.add('active');
   $$('.sidebar-link').forEach(l => l.classList.toggle('active', l.dataset.view === view));
   $(`#${view}View`).scrollTop = 0;
+
+  if (view === 'admin') loadAdminUsers();
+  if (view === 'profile') loadProfile();
 }
 
 function goBack() {
@@ -803,8 +809,19 @@ async function init() {
       if (view === 'home') { state.history = []; navigate('home'); loadHome(); }
       else if (view === 'explore') { state.history = []; navigate('explore'); state.explorePage = 1; state.filters = {}; loadExploreFilters(); loadExplore(); }
       else if (view === 'mylist') { state.history = []; navigate('mylist'); loadMyList(); }
+      else if (view === 'admin') { state.history = []; navigate('admin'); }
+      else if (view === 'profile') { state.history = []; navigate('profile'); }
     };
   });
+
+  // Admin modal
+  $('#addUserBtn').onclick = openAddUserModal;
+  $('#closeModal').onclick = () => { $('#userModal').style.display = 'none'; };
+  $('#modalCancelBtn').onclick = () => { $('#userModal').style.display = 'none'; };
+  $('#modalSaveBtn').onclick = saveUser;
+
+  // Profile change password
+  $('#changePassBtn').onclick = changeOwnPassword;
 
   // Explore tabs
   $$('.explore-tab').forEach(tab => {
@@ -845,6 +862,130 @@ async function init() {
   const isAuth = await checkAuth();
   if (isAuth) showApp();
   else $('#authScreen').style.display = 'flex';
+}
+
+/* ============ ADMIN PANEL ============ */
+async function loadAdminUsers() {
+  try {
+    const users = await api('/api/auth/admin/users');
+    const container = $('#adminUserList');
+    if (!users.length) { container.innerHTML = '<div class="empty-state"><p>No users found</p></div>'; return; }
+    container.innerHTML = users.map(u => `
+      <div class="admin-user-card">
+        <div class="avatar-sm">${u.username.charAt(0).toUpperCase()}</div>
+        <div class="admin-user-info">
+          <div class="name">${esc(u.username)}</div>
+          <div class="email">${esc(u.email)}</div>
+          <div class="role"><span class="badge ${u.is_admin ? '' : 'user'}">${u.is_admin ? 'Admin' : 'User'}</span></div>
+        </div>
+        <div class="admin-user-actions">
+          <button class="btn-icon" title="Edit" onclick="openEditUserModal(${u.id},'${esc(u.username)}','${esc(u.email)}')">✏</button>
+          ${u.id !== currentUser.id ? `<button class="btn-icon" title="${u.is_admin ? 'Remove Admin' : 'Make Admin'}" onclick="${u.is_admin ? `removeAdmin(${u.id})` : `makeAdmin(${u.id})`}">${u.is_admin ? '⬇' : '⬆'}</button>` : ''}
+          ${u.id !== currentUser.id ? `<button class="btn-icon danger" title="Delete" onclick="deleteUser(${u.id},'${esc(u.username)}')">✕</button>` : ''}
+        </div>
+      </div>
+    `).join('');
+  } catch { }
+}
+
+async function openAddUserModal() {
+  $('#modalTitle').textContent = 'Add User';
+  $('#editUserId').value = '';
+  $('#modalUsername').value = '';
+  $('#modalEmail').value = '';
+  $('#modalPassword').value = '';
+  $('#modalPassLabel').textContent = 'Password';
+  $('#modalPassword').required = true;
+  $('#modalError').textContent = '';
+  $('#userModal').style.display = 'flex';
+}
+
+function openEditUserModal(id, username, email) {
+  $('#modalTitle').textContent = 'Edit User';
+  $('#editUserId').value = id;
+  $('#modalUsername').value = username;
+  $('#modalEmail').value = email;
+  $('#modalPassword').value = '';
+  $('#modalPassLabel').textContent = 'New Password (leave blank to keep)';
+  $('#modalPassword').required = false;
+  $('#modalError').textContent = '';
+  $('#userModal').style.display = 'flex';
+}
+
+async function saveUser() {
+  const id = $('#editUserId').value;
+  const username = $('#modalUsername').value.trim();
+  const email = $('#modalEmail').value.trim();
+  const password = $('#modalPassword').value;
+
+  if (!username || !email) { $('#modalError').textContent = 'Username and email required'; return; }
+  if (!id && !password) { $('#modalError').textContent = 'Password required'; return; }
+
+  try {
+    if (id) {
+      const body = { username, email };
+      if (password) body.password = password;
+      await api(`/api/auth/admin/users/${id}`, { method: 'PUT', body: JSON.stringify(body) });
+    } else {
+      await api('/api/auth/admin/users', { method: 'POST', body: JSON.stringify({ username, email, password }) });
+    }
+    $('#userModal').style.display = 'none';
+    loadAdminUsers();
+  } catch (e) {
+    $('#modalError').textContent = e.message || 'Failed';
+  }
+}
+
+async function makeAdmin(id) {
+  await api(`/api/auth/admin/users/${id}/make-admin`, { method: 'POST' });
+  loadAdminUsers();
+}
+
+async function removeAdmin(id) {
+  await api(`/api/auth/admin/users/${id}/remove-admin`, { method: 'POST' });
+  loadAdminUsers();
+}
+
+async function deleteUser(id, username) {
+  if (!confirm(`Delete user "${username}"?`)) return;
+  await api(`/api/auth/admin/users/${id}`, { method: 'DELETE' });
+  loadAdminUsers();
+}
+
+/* ============ PROFILE ============ */
+async function loadProfile() {
+  try {
+    const me = await api('/api/auth/me');
+    currentUser = me;
+    $('#profileAvatar').textContent = me.username.charAt(0).toUpperCase();
+    $('#profileUsername').textContent = me.username;
+    $('#profileEmail').textContent = me.email;
+    $('#profileRole').textContent = me.is_admin ? 'Administrator' : 'Member';
+    $('#profileSince').textContent = me.created_at ? new Date(me.created_at).toLocaleDateString() : '-';
+    $('#changePassError').textContent = '';
+  } catch { }
+}
+
+async function changeOwnPassword() {
+  const current = $('#changePassCurrent').value;
+  const np = $('#changePassNew').value;
+  const errEl = $('#changePassError');
+  errEl.textContent = '';
+
+  if (!current || !np) { errEl.textContent = 'Both fields required'; return; }
+  if (np.length < 6) { errEl.textContent = 'New password must be at least 6 characters'; return; }
+
+  try {
+    await api('/api/auth/profile/change-password', { method: 'POST', body: JSON.stringify({ current_password: current, new_password: np }) });
+    errEl.style.color = 'var(--accent)';
+    errEl.textContent = 'Password updated!';
+    $('#changePassCurrent').value = '';
+    $('#changePassNew').value = '';
+    setTimeout(() => { errEl.textContent = ''; errEl.style.color = ''; }, 3000);
+  } catch (e) {
+    errEl.style.color = '';
+    errEl.textContent = e.message || 'Failed';
+  }
 }
 
 document.addEventListener('DOMContentLoaded', init);

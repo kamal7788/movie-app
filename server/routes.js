@@ -79,7 +79,7 @@ router.post('/login', async (req, res) => {
 router.get('/profile', authMiddleware, async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, username, email, created_at FROM users WHERE id = $1',
+      'SELECT id, username, email, is_admin, created_at FROM users WHERE id = $1',
       [req.user.id]
     );
     if (result.rows.length === 0) {
@@ -144,6 +144,84 @@ router.delete('/admin/users/:userId', authMiddleware, adminOnly, async (req, res
   try {
     await pool.query('DELETE FROM users WHERE id = $1 AND id != $2', [req.params.userId, req.user.id]);
     res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// --- Admin: Update User ---
+router.put('/admin/users/:userId', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    const { username, email, password } = req.body;
+    const userId = req.params.userId;
+
+    // Check user exists
+    const existing = await pool.query('SELECT id FROM users WHERE id = $1', [userId]);
+    if (existing.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+
+    // Check username/email uniqueness
+    if (username || email) {
+      const dup = await pool.query(
+        'SELECT id FROM users WHERE (email = $1 OR username = $2) AND id != $3',
+        [email || '', username || '', userId]
+      );
+      if (dup.rows.length > 0) return res.status(409).json({ error: 'Username or email already exists' });
+    }
+
+    if (password) {
+      if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
+      const hash = await bcrypt.hash(password, 10);
+      await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hash, userId]);
+    }
+    if (username) await pool.query('UPDATE users SET username = $1 WHERE id = $2', [username, userId]);
+    if (email) await pool.query('UPDATE users SET email = $1 WHERE id = $2', [email, userId]);
+
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('Admin update user error:', e);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// --- Admin: Remove Admin ---
+router.post('/admin/users/:userId/remove-admin', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    if (parseInt(req.params.userId) === req.user.id) return res.status(400).json({ error: 'Cannot remove own admin' });
+    await pool.query('UPDATE users SET is_admin = false WHERE id = $1', [req.params.userId]);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// --- Profile: Change Own Password ---
+router.post('/profile/change-password', authMiddleware, async (req, res) => {
+  try {
+    const { current_password, new_password } = req.body;
+    if (!current_password || !new_password) return res.status(400).json({ error: 'Both fields required' });
+    if (new_password.length < 6) return res.status(400).json({ error: 'New password must be at least 6 characters' });
+
+    const result = await pool.query('SELECT password_hash FROM users WHERE id = $1', [req.user.id]);
+    const valid = await bcrypt.compare(current_password, result.rows[0].password_hash);
+    if (!valid) return res.status(401).json({ error: 'Current password is incorrect' });
+
+    const hash = await bcrypt.hash(new_password, 10);
+    await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hash, req.user.id]);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// --- Profile: Get own profile (is_admin included) ---
+router.get('/me', authMiddleware, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT id, username, email, is_admin, created_at FROM users WHERE id = $1',
+      [req.user.id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+    res.json(result.rows[0]);
   } catch (e) {
     res.status(500).json({ error: 'Server error' });
   }
