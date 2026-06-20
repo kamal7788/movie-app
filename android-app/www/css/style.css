@@ -312,11 +312,14 @@ a{color:var(--accent);text-decoration:none}
   .hero-desc{display:none}
   .hero-home-content{padding:16px}
   .hero-buttons .btn{padding:8px 14px;font-size:12px}
-  .browse-grid{grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
-  .card{border-radius:8px;width:100%}
-  .card-body{padding:6px 8px 8px}
-  .card-title{font-size:12px}
-  .card-meta{font-size:10px}
+  .row-scroll .card{flex:0 0 auto;width:130px}
+  .row-scroll .card .card-body{padding:6px 8px 8px}
+  .row-scroll .card .card-title{font-size:12px}
+  .browse-grid{grid-template-columns:repeat(3,1fr);gap:10px}
+  .browse-grid .card{width:100%}
+  .browse-grid .card .card-body{padding:6px 8px 8px}
+  .browse-grid .card .card-title{font-size:12px}
+  .browse-grid .card .card-meta{font-size:10px}
   .mylist-stats{grid-template-columns:1fr 1fr 1fr;gap:8px}
   .stat-card{padding:12px}
   .stat-value{font-size:22px}
@@ -393,6 +396,8 @@ body.tv-mode .browse-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1f
 body.tv-mode .card{border-radius:8px;width:100%}
 body.tv-mode .card:focus{outline:2px solid var(--accent);outline-offset:2px;transform:scale(1.04)}
 body.tv-mode .row-scroll{gap:10px;padding-bottom:4px}
+body.tv-mode .row-scroll .card{flex:0 0 auto;width:150px}
+body.tv-mode .row-scroll .card .card-poster{aspect-ratio:2/3}
 body.tv-mode .section{margin-bottom:20px}
 body.tv-mode .section-title{font-size:16px}
 body.tv-mode .detail-body{grid-template-columns:1fr}
@@ -408,5 +413,3 @@ body.tv-mode .load-more button{padding:10px 24px;font-size:12px}
 body.tv-mode .episode-thumb{width:160px;height:90px}
 body.tv-mode .mylist-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
 body.tv-mode .mylist-stats{grid-template-columns:repeat(3,1fr);gap:10px}
-body.tv-mode .row-scroll .card{flex:0 0 auto;width:150px}
-body.tv-mode .row-scroll .card .card-poster{aspect-ratio:2/3}
