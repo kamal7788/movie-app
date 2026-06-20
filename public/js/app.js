@@ -3,7 +3,7 @@
    ============================================ */
 
 const API = '';  // same origin
-const VIDSRC_EMBED = 'https://vidsrc.to/embed';
+const VIDKING_EMBED = 'https://www.vidking.net/embed';
 const TMDB_IMG = 'https://image.tmdb.org/t/p';
 
 const $ = (s, p = document) => p.querySelector(s);
@@ -710,15 +710,18 @@ async function loadEpisodes(tvId, season) {
 }
 
 /* ============================================
-   Player
+   Player - VidKing.net
    ============================================ */
+let playerProgressInterval = null;
+let playerProgressCheck = null;
+
 function playMovie(tmdbId, title) {
-  const embedUrl = `${VIDSRC_EMBED}/movie/tmdb-${tmdbId}`;
+  const embedUrl = `${VIDKING_EMBED}/movie/${tmdbId}?color=e50914&nextEpisode=true&episodeSelector=true`;
   openPlayer(embedUrl, title, tmdbId, 'movie');
 }
 
 function playEpisode(tvId, season, episode, showName) {
-  const embedUrl = `${VIDSRC_EMBED}/tv/tmdb-${tvId}/${season}/${episode}`;
+  const embedUrl = `${VIDKING_EMBED}/tv/${tvId}/${season}/${episode}?color=e50914&nextEpisode=true&episodeSelector=true`;
   openPlayer(embedUrl, `${showName || 'TV'} - S${season}E${episode}`, tvId, 'tv', season, episode);
 }
 
@@ -740,23 +743,28 @@ function openPlayer(url, title, tmdbId, mediaType, season, episode) {
 
   // Block popups
   window.open = () => null;
-  document.addEventListener('click', (e) => {
-    if (e.target.closest('.player-wrapper') && e.target.closest('a[target="_blank"]')) {
-      e.preventDefault();
-    }
-  }, true);
 
   $('#playerControls').innerHTML = `
-    <span>Space=play/pause, ←→=seek, ↑↓=volume, F=fullscreen, M=mute</span>
+    <span>VidKing Player &middot; Space=play/pause, F=fullscreen, Esc=back</span>
     <span>Press Esc to exit</span>
   `;
 
-  // Track progress every 30 seconds
+  // VidKing postMessage progress tracking
   if (token && tmdbId) {
-    const interval = setInterval(() => {
+    // Clear any existing listeners
+    if (playerProgressInterval) clearInterval(playerProgressInterval);
+    if (playerProgressCheck) clearInterval(playerProgressCheck);
+
+    const progressHandler = (event) => {
+      if (typeof event.data !== 'string') return;
       try {
-        const vid = frame.contentWindow?.document?.querySelector('video');
-        if (vid) {
+        const msg = JSON.parse(event.data);
+        if (msg.type !== 'PLAYER_EVENT' || !msg.data) return;
+
+        const { currentTime, duration, progress, event: evt, id, mediaType: mt, season: s, episode: ep } = msg.data;
+
+        // Save progress on key events
+        if (['timeupdate', 'pause', 'ended', 'seeked'].includes(evt)) {
           api('/api/auth/history', {
             method: 'POST',
             body: JSON.stringify({
@@ -767,19 +775,22 @@ function openPlayer(url, title, tmdbId, mediaType, season, episode) {
               backdrop_path: state.detailData?.backdrop_path,
               season: season || 1,
               episode: episode || 1,
-              progress_seconds: Math.floor(vid.currentTime),
-              duration_seconds: Math.floor(vid.duration || 0),
+              progress_seconds: Math.floor(currentTime || 0),
+              duration_seconds: Math.floor(duration || 0),
             }),
           }).catch(() => {});
         }
       } catch {}
-    }, 30000);
+    };
+
+    window.addEventListener('message', progressHandler);
 
     // Clean up on navigate away
-    const checkInterval = setInterval(() => {
+    playerProgressCheck = setInterval(() => {
       if (state.view !== 'player') {
-        clearInterval(interval);
-        clearInterval(checkInterval);
+        window.removeEventListener('message', progressHandler);
+        clearInterval(playerProgressCheck);
+        playerProgressCheck = null;
       }
     }, 1000);
   }
