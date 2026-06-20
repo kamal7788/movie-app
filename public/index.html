@@ -3,133 +3,139 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#141414">
+  <meta name="theme-color" content="#0a0a0f">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <title>StreamFlix</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>▶</text></svg>">
 </head>
 <body>
 
-  <!-- AUTH SCREENS -->
+  <!-- AUTH -->
   <div id="authScreen" class="auth-screen">
     <div class="auth-bg"></div>
     <div class="auth-box">
-      <h1 class="auth-logo">STREAMFLIX</h1>
-      <div id="authLoginForm">
-        <h2>Sign In</h2>
-        <input type="email" id="loginEmail" placeholder="Email" autocomplete="email">
-        <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password">
-        <button class="auth-btn" id="loginBtn">Sign In</button>
-        <p class="auth-switch">New here? <a id="showRegister">Create account</a></p>
+      <h1 class="auth-logo">StreamFlix</h1>
+      <p class="auth-tagline">Premium Cinema</p>
+      <div class="auth-card">
+        <h2>Log In</h2>
+        <label class="field-label">Email Address</label>
+        <input type="email" id="loginEmail" placeholder="name@example.com" autocomplete="email">
+        <label class="field-label">Password</label>
+        <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
+        <button class="auth-btn" id="loginBtn">Continue</button>
         <p class="auth-error" id="loginError"></p>
       </div>
-      <div id="authRegisterForm" style="display:none">
-        <h2>Create Account</h2>
-        <input type="text" id="regUsername" placeholder="Username" autocomplete="username">
-        <input type="email" id="regEmail" placeholder="Email" autocomplete="email">
-        <input type="password" id="regPassword" placeholder="Password (min 6 chars)" autocomplete="new-password">
-        <button class="auth-btn" id="registerBtn">Create Account</button>
-        <p class="auth-switch">Already have an account? <a id="showLogin">Sign in</a></p>
-        <p class="auth-error" id="registerError"></p>
-      </div>
+      <p class="auth-footer">Contact your administrator to get an account</p>
     </div>
   </div>
 
-  <!-- MAIN APP -->
-  <div id="app" style="display:none">
-    <nav class="navbar" id="navbar">
-      <div class="nav-left">
-        <button class="nav-back" id="backBtn" style="display:none">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
-        </button>
-        <h1 class="logo" id="logoBtn">STREAMFLIX</h1>
-      </div>
-      <div class="nav-center">
-        <button class="nav-tab active" data-view="home">Home</button>
-        <button class="nav-tab" data-view="movies">Movies</button>
-        <button class="nav-tab" data-view="series">TV Series</button>
-        <button class="nav-tab" data-view="mylist">My List</button>
-      </div>
-      <div class="nav-right">
-        <div class="search-box" id="searchBox">
-          <input type="text" id="searchInput" placeholder="Search..." autocomplete="off">
-          <button id="searchBtn" aria-label="Search">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-          </button>
-          <button id="searchClose" style="display:none">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-          </button>
-        </div>
-        <div class="user-menu" id="userMenu">
-          <button class="user-avatar" id="userAvatarBtn"></button>
-          <div class="user-dropdown" id="userDropdown">
-            <div class="dropdown-item" id="profileBtn">Profile</div>
-            <div class="dropdown-item" id="logoutBtn">Sign Out</div>
-          </div>
-        </div>
-      </div>
-    </nav>
+  <!-- APP LAYOUT -->
+  <div id="app" class="app-layout" style="display:none">
 
-    <main id="mainContent">
-      <!-- HOME -->
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <h1>StreamFlix</h1>
+        <span>Premium Cinema</span>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="sidebar-link active" data-view="home">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <span>Home</span>
+        </div>
+        <div class="sidebar-link" data-view="explore">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+          <span>Explore</span>
+        </div>
+        <div class="sidebar-link" data-view="mylist">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+          <span>Watchlist</span>
+        </div>
+      </nav>
+      <div class="sidebar-user">
+        <div class="sidebar-user-avatar" id="userAvatar">A</div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name" id="userName">User</div>
+          <div class="sidebar-user-role">Member</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main-content">
+      <header class="topbar">
+        <div class="topbar-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input type="text" id="searchInput" placeholder="Search movies, series, actors...">
+        </div>
+        <div class="topbar-right">
+          <button class="topbar-icon" id="logoutBtn" title="Sign Out">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- HOME VIEW -->
       <div class="view active" id="homeView">
-        <div class="hero" id="hero"></div>
-        <div class="content-sections" id="homeSections"></div>
+        <div id="heroHome" class="hero-home"></div>
+        <div id="homeSections"></div>
       </div>
 
-      <!-- BROWSE -->
-      <div class="view" id="browseView">
-        <div class="browse-filters" id="browseFilters">
-          <div class="filter-row" id="filterRow"></div>
+      <!-- EXPLORE VIEW -->
+      <div class="view" id="exploreView">
+        <div class="explore-tabs" id="exploreTabs">
+          <button class="explore-tab active" data-type="all">All</button>
+          <button class="explore-tab" data-type="movie">Movies</button>
+          <button class="explore-tab" data-type="tv">TV Series</button>
         </div>
-        <div class="browse-grid" id="browseGrid"></div>
+        <div class="explore-filters" id="exploreFilters"></div>
+        <div class="browse-grid" id="exploreGrid"></div>
         <div class="load-more" id="loadMore" style="display:none">
-          <button id="loadMoreBtn">Load More</button>
+          <button id="loadMoreBtn">LOAD MORE RESULTS</button>
+          <div class="load-more-info" id="loadMoreInfo"></div>
         </div>
       </div>
 
-      <!-- SEARCH -->
-      <div class="view" id="searchView">
-        <div class="browse-header"><h2 id="searchTitle">Search Results</h2></div>
-        <div class="browse-grid" id="searchGrid"></div>
-      </div>
-
-      <!-- MY LIST -->
+      <!-- MY LIST VIEW -->
       <div class="view" id="mylistView">
-        <div class="browse-header"><h2>My List</h2></div>
-        <div class="mylist-tabs">
-          <button class="mylist-tab active" data-tab="favorites">Favorites</button>
-          <button class="mylist-tab" data-tab="watchlist">Watchlist</button>
-          <button class="mylist-tab" data-tab="continue">Continue Watching</button>
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
+          <h2 style="font-size:22px;font-weight:700">My Library</h2>
         </div>
-        <div class="browse-grid" id="mylistGrid"></div>
+        <div class="mylist-stats" id="mylistStats"></div>
+        <div class="mylist-tabs" id="mylistTabs">
+          <button class="mylist-tab active" data-tab="all">All</button>
+          <button class="mylist-tab" data-tab="favorites">Favorites</button>
+          <button class="mylist-tab" data-tab="watchlist">To Watch</button>
+          <button class="mylist-tab" data-tab="continue">Watching</button>
+        </div>
+        <div class="mylist-grid" id="mylistGrid"></div>
       </div>
 
-      <!-- DETAIL -->
-      <div class="view" id="detailView">
-        <div class="detail-hero" id="detailHero"></div>
-        <div class="detail-info" id="detailInfo"></div>
-        <div class="detail-seasons" id="detailSeasons" style="display:none"></div>
-      </div>
+      <!-- DETAIL VIEW -->
+      <div class="view" id="detailView"></div>
 
-      <!-- PLAYER -->
-      <div class="view" id="playerView">
-        <div class="player-container">
-          <div class="player-header">
-            <button class="player-back" id="playerBack">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
-            </button>
-            <span class="player-title" id="playerTitle"></span>
-          </div>
-          <div class="player-wrapper">
-            <iframe id="playerFrame" allow="autoplay; fullscreen; encrypted-media" allowfullscreen></iframe>
-          </div>
-          <div class="player-controls-info" id="playerControls"></div>
-        </div>
-      </div>
-    </main>
+    </div>
+  </div>
+
+  <!-- PLAYER OVERLAY -->
+  <div class="player-overlay" id="playerOverlay">
+    <div class="player-topbar">
+      <button class="player-back" id="playerBack">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <span class="player-title-text" id="playerTitle"></span>
+    </div>
+    <div class="player-frame">
+      <iframe id="playerFrame" allow="autoplay; fullscreen; encrypted-media" allowfullscreen></iframe>
+    </div>
+    <div class="player-bottom">
+      <span>VidKing Player</span>
+      <span>Esc to close</span>
+    </div>
   </div>
 
   <div class="loading-spinner" id="loadingSpinner"><div class="spinner"></div></div>

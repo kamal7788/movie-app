@@ -7,6 +7,11 @@ require('dotenv').config();
 
 const router = express.Router();
 
+function adminOnly(req, res, next) {
+  if (!req.user || !req.user.is_admin) return res.status(403).json({ error: 'Admin only' });
+  next();
+}
+
 // Register
 router.post('/register', async (req, res) => {
   try {
@@ -61,9 +66,9 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    const token = jwt.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '30d' });
+    const token = jwt.sign({ id: user.id, username: user.username, is_admin: user.is_admin }, process.env.JWT_SECRET, { expiresIn: '30d' });
 
-    res.json({ token, user: { id: user.id, username: user.username, email: user.email } });
+    res.json({ token, user: { id: user.id, username: user.username, email: user.email, is_admin: user.is_admin } });
   } catch (e) {
     console.error('Login error:', e);
     res.status(500).json({ error: 'Server error' });
@@ -81,6 +86,64 @@ router.get('/profile', authMiddleware, async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
     res.json(result.rows[0]);
+  } catch (e) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// --- Admin: Create User ---
+router.post('/admin/users', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    const { username, email, password } = req.body;
+    if (!username || !email || !password) {
+      return res.status(400).json({ error: 'All fields required' });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+    const existing = await pool.query(
+      'SELECT id FROM users WHERE email = $1 OR username = $2', [email, username]
+    );
+    if (existing.rows.length > 0) {
+      return res.status(409).json({ error: 'Username or email already exists' });
+    }
+    const hash = await bcrypt.hash(password, 10);
+    const result = await pool.query(
+      'INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3) RETURNING id, username, email, created_at',
+      [username, email, hash]
+    );
+    res.json(result.rows[0]);
+  } catch (e) {
+    console.error('Admin create user error:', e);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// --- Admin: List Users ---
+router.get('/admin/users', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT id, username, email, is_admin, created_at FROM users ORDER BY created_at DESC');
+    res.json(result.rows);
+  } catch (e) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// --- Admin: Make Admin ---
+router.post('/admin/users/:userId/make-admin', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    await pool.query('UPDATE users SET is_admin = true WHERE id = $1', [req.params.userId]);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// --- Admin: Delete User ---
+router.delete('/admin/users/:userId', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM users WHERE id = $1 AND id != $2', [req.params.userId, req.user.id]);
+    res.json({ ok: true });
   } catch (e) {
     res.status(500).json({ error: 'Server error' });
   }

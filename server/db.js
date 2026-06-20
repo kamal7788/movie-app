@@ -34,6 +34,7 @@ async function migrate() {
         username VARCHAR(50) UNIQUE NOT NULL,
         email VARCHAR(255) UNIQUE NOT NULL,
         password_hash VARCHAR(255) NOT NULL,
+        is_admin BOOLEAN DEFAULT false,
         created_at TIMESTAMP DEFAULT NOW()
       );
 
@@ -75,6 +76,19 @@ async function migrate() {
         UNIQUE(user_id, tmdb_id, media_type)
       );
     `);
+
+    // Create default admin if no users exist
+    const userCount = await client.query('SELECT COUNT(*) FROM users');
+    if (parseInt(userCount.rows[0].count) === 0) {
+      const bcrypt = require('bcryptjs');
+      const hash = await bcrypt.hash('admin123', 10);
+      await client.query(
+        'INSERT INTO users (username, email, password_hash, is_admin) VALUES ($1, $2, $3, true)',
+        ['admin', 'admin@streamflix.local', hash]
+      );
+      console.log('Default admin created: admin@streamflix.local / admin123');
+    }
+
     console.log('Migrations complete');
   } finally {
     client.release();
