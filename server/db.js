@@ -77,16 +77,31 @@ async function migrate() {
       );
     `);
 
-    // Create default admin if no users exist
-    const userCount = await client.query('SELECT COUNT(*) FROM users');
-    if (parseInt(userCount.rows[0].count) === 0) {
+    // Add is_admin column if missing (for existing databases)
+    await client.query(`
+      DO $$ BEGIN
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT false;
+      EXCEPTION WHEN duplicate_column THEN null;
+      END $$;
+    `);
+
+    // Create default admin if no admin exists
+    const adminCheck = await client.query('SELECT id FROM users WHERE is_admin = true LIMIT 1');
+    if (adminCheck.rows.length === 0) {
       const bcrypt = require('bcryptjs');
       const hash = await bcrypt.hash('admin123', 10);
-      await client.query(
-        'INSERT INTO users (username, email, password_hash, is_admin) VALUES ($1, $2, $3, true)',
-        ['admin', 'admin@streamflix.local', hash]
-      );
-      console.log('Default admin created: admin@streamflix.local / admin123');
+      // Try insert, if admin email exists just make them admin
+      const existing = await client.query('SELECT id FROM users WHERE email = $1', ['admin@streamflix.local']);
+      if (existing.rows.length > 0) {
+        await client.query('UPDATE users SET is_admin = true WHERE email = $1', ['admin@streamflix.local']);
+        console.log('Existing user made admin: admin@streamflix.local');
+      } else {
+        await client.query(
+          'INSERT INTO users (username, email, password_hash, is_admin) VALUES ($1, $2, $3, true)',
+          ['admin', 'admin@streamflix.local', hash]
+        );
+        console.log('Default admin created: admin@streamflix.local / admin123');
+      }
     }
 
     console.log('Migrations complete');
