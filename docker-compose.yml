@@ -8,7 +8,7 @@ services:
       - "3000:3000"
     environment:
       - DATABASE_URL=postgresql://streamflix:streamflix@db:5432/streamflix
-      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - JWT_SECRET=${JWT_SECRET}
       - TMDB_API_KEY=${TMDB_API_KEY}
       - NODE_ENV=production
       - PORT=3000
@@ -22,14 +22,14 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     environment:
-      - POSTGRES_USER=streamflix
-      - POSTGRES_PASSWORD=streamflix
-      - POSTGRES_DB=streamflix
+      POSTGRES_USER: streamflix
+      POSTGRES_PASSWORD: streamflix
+      POSTGRES_DB: streamflix
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U streamflix"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      interval: 3s
+      timeout: 3s
+      retries: 10
 
 volumes:
   pgdata:

@@ -3,8 +3,27 @@ require('dotenv').config();
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  ssl: false,
+  max: 5,
+  idleTimeoutMillis: 10000,
+  connectionTimeoutMillis: 5000,
 });
+
+async function waitForDB(retries = 20, delay = 2000) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const client = await pool.connect();
+      await client.query('SELECT 1');
+      client.release();
+      console.log('Database connected');
+      return true;
+    } catch (e) {
+      console.log(`Waiting for database... (${i + 1}/${retries})`);
+      await new Promise(r => setTimeout(r, delay));
+    }
+  }
+  throw new Error('Could not connect to database');
+}
 
 async function migrate() {
   const client = await pool.connect();
@@ -15,7 +34,6 @@ async function migrate() {
         username VARCHAR(50) UNIQUE NOT NULL,
         email VARCHAR(255) UNIQUE NOT NULL,
         password_hash VARCHAR(255) NOT NULL,
-        avatar_url VARCHAR(500),
         created_at TIMESTAMP DEFAULT NOW()
       );
 
@@ -63,8 +81,4 @@ async function migrate() {
   }
 }
 
-if (process.argv[2] === 'migrate') {
-  migrate().then(() => process.exit(0)).catch(e => { console.error(e); process.exit(1); });
-}
-
-module.exports = { pool, migrate };
+module.exports = { pool, waitForDB, migrate };

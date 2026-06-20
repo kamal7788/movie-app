@@ -3,7 +3,7 @@ const path = require('path');
 const helmet = require('helmet');
 const compression = require('compression');
 const cors = require('cors');
-const { pool, migrate } = require('./db');
+const { waitForDB, migrate } = require('./db');
 const authRoutes = require('./routes');
 const tmdbRoutes = require('./tmdb');
 require('dotenv').config();
@@ -35,6 +35,7 @@ app.get('*', (req, res) => {
 // Start
 async function start() {
   try {
+    await waitForDB();
     await migrate();
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`StreamFlix running on http://0.0.0.0:${PORT}`);
