@@ -42,7 +42,7 @@ async function api(path, opts = {}) {
 }
 
 async function tmdb(path, params = {}) {
-  const url = new URL(`${API}/api/tmdb${path}`);
+  const url = new URL(`/api/tmdb${path}`, window.location.origin);
   Object.entries(params).forEach(([k, v]) => {
     if (v !== undefined && v !== null && v !== '' && v !== 'all') url.searchParams.set(k, v);
   });
