@@ -372,7 +372,11 @@ function removeFilter(key) {
   loadExplore();
 }
 
-document.addEventListener('click', () => $$('.filter-menu').forEach(m => m.classList.remove('open')));
+document.addEventListener('click', (e) => {
+  // Don't close menus if clicking inside a menu or its chip
+  if (e.target.closest('.filter-dropdown')) return;
+  $$('.filter-menu').forEach(m => m.classList.remove('open'));
+});
 
 async function loadExplore() {
   const grid = $('#exploreGrid');
@@ -1114,7 +1118,10 @@ document.addEventListener('DOMContentLoaded', init);
     var viewEls = view ? Array.from(view.querySelectorAll(FOCUS_SEL)) : [];
     var topbarEls = Array.from(document.querySelectorAll(TOPBAR_SEL));
     var navEls = getNavItems();
+    var seen = new Set();
     return topbarEls.concat(viewEls, navEls).filter(function(el) {
+      if (seen.has(el)) return false;
+      seen.add(el);
       var rect = el.getBoundingClientRect();
       return rect.width > 0 && rect.height > 0;
     });
@@ -1151,6 +1158,9 @@ document.addEventListener('DOMContentLoaded', init);
     getNavItems().forEach(function(el) { el.setAttribute('tabindex', '0'); });
     var searchBtn = document.querySelector('#searchToggle');
     if (searchBtn) searchBtn.setAttribute('tabindex', '0');
+  }
+
+  function focusFirstTv() {
     var all = getAllFocusable();
     if (all.length) focusEl(all[0]);
   }
@@ -1174,6 +1184,8 @@ document.addEventListener('DOMContentLoaded', init);
           case 13: // ENTER selects
           case 66:
             if (mi >= 0) { f.click(); e.preventDefault(); return; }
+            // If focus is on chip and menu is open, focus first menu item
+            if (f.classList.contains('filter-chip') && menuItems.length) { focusEl(menuItems[0]); e.preventDefault(); return; }
             e.preventDefault(); return;
           case 27: // ESC closes menu
             openMenu.classList.remove('open');
@@ -1188,6 +1200,7 @@ document.addEventListener('DOMContentLoaded', init);
 
     if (!f || f === document.body || f === document.documentElement) {
       initTvNav();
+      focusFirstTv();
       return;
     }
 
@@ -1231,6 +1244,10 @@ document.addEventListener('DOMContentLoaded', init);
         if (isOnNav) {
           var contentItems = all.filter(function(el) { return !el.classList.contains('mobile-nav-item'); });
           if (contentItems.length) focusEl(contentItems[contentItems.length - 1]);
+          else {
+            var topbarEls = Array.from(document.querySelectorAll(TOPBAR_SEL)).filter(function(el) { return el.getBoundingClientRect().width > 0; });
+            if (topbarEls.length) focusEl(topbarEls[0]);
+          }
         } else if (idx >= 0) {
           var curX = f.getBoundingClientRect().left + f.getBoundingClientRect().width / 2;
           var best = null, bestDist = Infinity;
@@ -1241,7 +1258,13 @@ document.addEventListener('DOMContentLoaded', init);
             if (dist < bestDist) { bestDist = dist; best = all[i]; }
             if (bestDist < 300) break;
           }
-          if (best) focusEl(best);
+          if (best) {
+            focusEl(best);
+          } else {
+            // At topmost content element — go to first topbar element
+            var topbarEls = Array.from(document.querySelectorAll(TOPBAR_SEL)).filter(function(el) { return el.getBoundingClientRect().width > 0; });
+            if (topbarEls.length) focusEl(topbarEls[0]);
+          }
         }
         e.preventDefault();
         break;
@@ -1289,8 +1312,8 @@ document.addEventListener('DOMContentLoaded', init);
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() { setTimeout(initTvNav, 800); });
+    document.addEventListener('DOMContentLoaded', function() { setTimeout(function() { initTvNav(); focusFirstTv(); }, 800); });
   } else {
-    setTimeout(initTvNav, 800);
+    setTimeout(function() { initTvNav(); focusFirstTv(); }, 800);
   }
 })();
