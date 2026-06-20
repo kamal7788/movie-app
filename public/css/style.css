@@ -347,5 +347,61 @@ a{color:var(--accent);text-decoration:none}
   .explore-bar.sticky{position:sticky;top:0}
 }
 
+/* ============ TV / ANDROID TV (force mobile layout) ============ */
+@media only screen and (min-width:600px) and (pointer:coarse) and (hover:none) {
+  .sidebar{display:none !important}
+  .mobile-nav{display:flex !important}
+  .main-content{margin-left:0 !important;padding-bottom:72px !important}
+  .topbar{padding:0 12px;height:52px}
+  .view{padding:12px}
+  .hero-home{height:280px;border-radius:12px;margin-bottom:20px}
+  .hero-title{font-size:26px}
+  .hero-home-content{padding:16px}
+  .hero-buttons .btn{padding:8px 14px;font-size:12px}
+  .browse-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+  .card{border-radius:8px;width:100%}
+  .detail-body{grid-template-columns:1fr}
+  .detail-sidebar{display:none}
+  .explore-bar{flex-wrap:wrap;gap:8px;padding:8px 0}
+  .explore-tabs{width:100%;overflow-x:auto}
+  .explore-tab{padding:6px 12px;font-size:12px}
+  .filter-chip{padding:5px 10px;font-size:11px;white-space:nowrap;flex-shrink:0}
+  .load-more button{padding:10px 20px;font-size:12px}
+  .episode-thumb{width:140px;height:80px}
+  .episode-overview{display:none}
+}
+
 /* Focus for D-pad/remote */
-.card:focus,.card.focused,.btn:focus,.btn.focused,.sidebar-link:focus,.sidebar-link.focused,.filter-chip:focus,.filter-chip.focused,.explore-tab:focus,.explore-tab.focused,.mylist-tab:focus,.mylist-tab.focused,.sidebar-action-btn:focus,.sidebar-action-btn.focused,.mobile-nav-item:focus,.mobile-nav-item.focused{outline:2px solid var(--accent);outline-offset:2px}
+.card:focus,.card.focused,.btn:focus,.btn.focused,.filter-chip:focus,.filter-chip.focused,.explore-tab:focus,.explore-tab.focused,.mylist-tab:focus,.mylist-tab.focused,.sidebar-action-btn:focus,.sidebar-action-btn.focused,.mobile-nav-item:focus,.mobile-nav-item.focused{outline:2px solid var(--accent);outline-offset:2px}
+
+/* TV remote: disable tab on sidebar links by default */
+.sidebar-link[tabindex="-1"],.sidebar-user[tabindex="-1"]{outline:none}
+.sidebar-link[tabindex="-1"]:focus{outline:none}
+
+/* TV mode: force mobile layout */
+body.tv-mode .sidebar{display:none !important}
+body.tv-mode .mobile-nav{display:flex !important}
+body.tv-mode .main-content{margin-left:0 !important;padding-bottom:72px !important}
+body.tv-mode .topbar{padding:0 12px;height:52px}
+body.tv-mode .view{padding:12px}
+body.tv-mode .hero-home{height:280px;border-radius:12px;margin-bottom:20px}
+body.tv-mode .hero-title{font-size:26px}
+body.tv-mode .hero-home-content{padding:16px}
+body.tv-mode .hero-buttons .btn{padding:8px 14px;font-size:12px}
+body.tv-mode .browse-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+body.tv-mode .card{border-radius:8px;width:100%}
+body.tv-mode .card:focus{outline:2px solid var(--accent);outline-offset:2px;transform:scale(1.04)}
+body.tv-mode .detail-body{grid-template-columns:1fr}
+body.tv-mode .detail-sidebar{display:none}
+body.tv-mode .explore-bar{flex-wrap:wrap;gap:8px;padding:8px 0}
+body.tv-mode .explore-tabs{width:100%;overflow-x:auto}
+body.tv-mode .explore-tab{padding:6px 12px;font-size:12px}
+body.tv-mode .filter-chip{padding:5px 10px;font-size:11px;white-space:nowrap;flex-shrink:0}
+body.tv-mode .load-more button{padding:10px 20px;font-size:12px}
+body.tv-mode .episode-thumb{width:140px;height:80px}
+body.tv-mode .episode-overview{display:none}
+body.tv-mode .view{overflow-y:auto;-webkit-overflow-scrolling:touch}
+body.tv-mode .row-scroll{scrollbar-width:auto}
+body.tv-mode .browse-grid{scrollbar-width:auto}
+body.tv-mode .mobile-nav-item{cursor:pointer}
+body.tv-mode .mobile-nav-item:focus{outline:2px solid var(--accent);outline-offset:-2px}
